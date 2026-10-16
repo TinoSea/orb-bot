@@ -11,12 +11,13 @@ This stage spends **$0**. Its only job is to find out whether the strategy has a
    python3 --version
    ```
    If you see 3.10 or higher, skip to step 3. If not, install Python from python.org (macOS installer) and reopen Terminal.
-3. Make a project folder and move the files into it (they'll be in Downloads):
+3. Get the code from GitHub with **GitHub Desktop** (free, desktop.github.com):
+   sign in, then **File → Clone Repository → orb-bot**, and set the Local Path to your home folder so it lands in `~/orb-bot`.
+   Then in Terminal:
    ```
-   mkdir -p ~/orb-bot
-   mv ~/Downloads/orb_backtest.py ~/Downloads/requirements.txt ~/Downloads/README.md ~/orb-bot/
    cd ~/orb-bot
    ```
+   Whenever Claude pushes a change: in GitHub Desktop click **Fetch origin**, then **Pull origin**.
 4. Create a private Python environment and install the libraries:
    ```
    python3 -m venv .venv
