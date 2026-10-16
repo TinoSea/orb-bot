@@ -1,0 +1,18 @@
+# Secrets - NEVER upload these
+.env
+*.env
+secrets*
+credentials*
+
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+
+# Backtest outputs (regenerated each run)
+trades.csv
+equity.png
+*.log
+
+# Mac clutter
+.DS_Store
