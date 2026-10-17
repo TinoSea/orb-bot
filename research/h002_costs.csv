@@ -10,7 +10,7 @@ EURUSD,3.0,Raw account: USD 3.00 per lot per side (compareforexbrokers.com FP Ma
 USDJPY,3.0,Raw account: USD 3.00 per lot per side,1.0,not yet calibrated (ExportSpreads.mq5 pending)
 GBPUSD,3.0,Raw account: USD 3.00 per lot per side,1.0,not yet calibrated (ExportSpreads.mq5 pending)
 AUDUSD,3.0,Raw account: USD 3.00 per lot per side,1.0,not yet calibrated (ExportSpreads.mq5 pending)
-XAUUSD,3.0,Raw metals: assumed same as FX - confirmed or corrected by the Gate 0 tester journal,1.0,not yet calibrated (ExportSpreads.mq5 pending)
+XAUUSD,3.0,Raw metals: USD 3.00 per lot per side - confirmed by the Gate 0 tester run (2026-10-18),1.0,not yet calibrated (ExportSpreads.mq5 pending)
 XAGUSD,3.0,Raw metals: assumed same as FX - to confirm,1.0,not yet calibrated (ExportSpreads.mq5 pending)
 WTI,0.0,Commodity CFD: spread only (to confirm),1.0,not yet calibrated (ExportSpreads.mq5 pending)
 BTCUSD,0.0,Crypto CFD: spread only (to confirm),1.0,not yet calibrated (ExportSpreads.mq5 pending)

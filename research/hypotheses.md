@@ -314,7 +314,13 @@ Approximation: removing Friday-afternoon trades could free the bot for a setup t
   business model, and exactly why passing a challenge is not evidence of an edge.
 
 ### Results
-*(none yet)*
+**Gate 0 — PASSED (2026-10-18).** MT5 Strategy Tester, MS_Gold v1.13 (commit 251b9c8), XAUUSD.r H1,
+2023-01-01 → 2025-06-30, 1-minute OHLC, $5,000, research mode. Compared with the independent Python replica
+(`results/h002/gate0/`): **112 of 112 trades match** on entry hour and direction (rule: ≥95%), median entry
+difference **0 ticks** (rule: ≤2), identical lot sizes and stops, same exit reason on every trade, R per
+trade correlation 1.0000; net $631.25 (MT5) vs $631.70 (Python). Three trades exit a few minutes apart
+inside the same bar (tick generation), with the same result. Gold commission of USD 3/lot/side confirmed.
+Both implementations use the broker's stored bar spreads, so the cost question of amendment 14c is still open.
 
 ### Decision
 *(keep / reject / park, and why)*
