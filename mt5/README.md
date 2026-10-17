@@ -25,6 +25,15 @@ refuses real-money accounts unless `AllowLive` is on, phone alerts and a CSV jou
    (expect very roughly 50–150 MB zipped; if it's too large, send `specs.csv`, `all_symbols.csv`,
    `export_log.txt` and `XAUUSD_M1.csv` first).
 
+## H-002 step 1b: measure real spreads (ExportSpreads script, ~10–20 minutes)
+
+MT5's bar history stores a spread that is usually the *lowest* in each bar, which understates costs.
+This script reads the real first ticks at the start of every hour for the last 90 days.
+
+1. MetaEditor → **File → New → Script** → name **ExportSpreads** → paste `mt5/ExportSpreads.mq5` → **Compile**.
+2. MT5 **Navigator → Scripts → ExportSpreads** → double-click → OK. Don't start it twice; wait for the alert.
+3. Attach `spread_samples.csv` and `spread_log.txt` from the same `orb_export` folder.
+
 ## H-002 step 2: Gate 0 — MT5 vs Python on gold
 
 1. Delete any old `MS_journal.csv` in `…/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/`.
@@ -42,12 +51,12 @@ refuses real-money accounts unless `AllowLive` is on, phone alerts and a CSV jou
 | Setting | Value |
 |---|---|
 | Expert | MS_Gold |
-| Symbol | XAUUSD (exact FP Markets name) |
+| Symbol | **XAUUSD.r** (FP Markets' gold) |
 | Timeframe | **H1** |
 | Date | **2023.01.01 → 2025.06.30** (do NOT go past June 2025 yet) |
 | Modelling | 1 minute OHLC |
 | Deposit / Leverage | **5000 USD**, 1:20 (research size so 1% risk is possible on gold) |
-| Inputs | `InpKillSwitchPct`, `InpDailyLossPct`, `InpWeeklyLossPct` = **100** (measurement only). Session: zone **NEW_YORK**, **08:00–17:00** (other markets: use the zone and hours in `research/h002_markets.csv`; BTC: `InpMode24x7` = true) |
+| Inputs | `InpKillSwitchPct`, `InpDailyLossPct`, `InpWeeklyLossPct` = **100** (measurement only). Session: zone **NEW_YORK**, **08:00–17:00** (other markets: use the zone and hours in `research/h002_markets.csv`; BTC: NEW_YORK 00:00–24:00, `InpMode24x7` = false, because FP Markets' BTC is closed at weekends) |
 
 4. Send Claude the **Backtest** tab and the **Journal** (select all → copy → paste into a text file).
 

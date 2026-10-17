@@ -29,7 +29,7 @@ Usage:
   python research/ms_replica.py --data data/export --label ALL --from 2023-01-01 --to 2025-06-30
 Options: --variant NAME (logged), --no-higher-low / --no-pullback / --no-session (ablations),
          --pessimistic (stop assumed first whenever stop and target share a bar),
-         --commission USD_PER_LOT_PER_SIDE, --swing-n, --zone-atr
+         --commission USD_PER_LOT_PER_SIDE (default: research/h002_costs.csv), --swing-n, --zone-atr
 
 Not financial advice. A backtest is evidence, not a promise.
 """
@@ -49,6 +49,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MARKETS_CSV = os.path.join(HERE, "h002_markets.csv")
+COSTS_CSV = os.path.join(HERE, "h002_costs.csv")
 RUN_LOG = os.path.join(HERE, "h002_runs.csv")
 RESULTS_DIR = os.path.join(HERE, "results", "h002")
 SERVER_MINUS_NY = 7
@@ -133,6 +134,23 @@ def load_specs(path: str) -> dict[str, Spec]:
                                int(r["swap_mode"]), float(r["swap_long"]), float(r["swap_short"]),
                                int(r["swap_3day"]), str(r["currency_profit"]).upper())
     return out
+
+
+def load_commissions(path: str = COSTS_CSV) -> dict[str, float]:
+    if not os.path.exists(path):
+        return {}
+    df = pd.read_csv(path)
+    return dict(zip(df["label"], df["commission_usd_per_lot_side"].astype(float)))
+
+
+def load_spread_mults(path: str = COSTS_CSV) -> dict[str, float]:
+    """Calibrated real-spread / bar-spread multipliers (amendment 14c). 1.0 = bar spreads as stored."""
+    if not os.path.exists(path):
+        return {}
+    df = pd.read_csv(path)
+    if "spread_mult" not in df.columns:
+        return {}
+    return dict(zip(df["label"], df["spread_mult"].astype(float)))
 
 
 def load_bars(path: str) -> pd.DataFrame:
@@ -234,11 +252,12 @@ class Position:
 
 class Replica:
     def __init__(self, bars: pd.DataFrame, spec: Spec, mkt: Market, prm: Params,
-                 deposit: float, commission: float = 0.0, fx: dict | None = None):
+                 deposit: float, commission: float = 0.0, fx: dict | None = None, spread_mult: float = 1.0):
         self.b = bars
         self.spec, self.mkt, self.p = spec, mkt, prm
         self.balance = deposit
         self.commission = commission
+        self.spread_mult = spread_mult
         self.fx = fx or {}
         self.h1 = resample(bars, "1h")
         self.h4 = resample(bars, "4h")
@@ -507,7 +526,10 @@ class Replica:
         b = self.b
         times = b.index
         o, h, l, c = (b[x].values for x in ("open", "high", "low", "close"))
-        spr = b["spread"].values * self.spec.point
+        raw = b["spread"].values
+        if self.spread_mult != 1.0:          # calibrated costs: floor at 1 point, then scale (amendment 14c)
+            raw = np.maximum(raw, 1.0) * self.spread_mult
+        spr = raw * self.spec.point
         h1_of = times.floor("1h")
         cur_h1 = None
         start, end = pd.Timestamp(start), pd.Timestamp(end)
@@ -621,7 +643,8 @@ def main():
     ap.add_argument("--from", dest="start", required=True)
     ap.add_argument("--to", dest="end", required=True)
     ap.add_argument("--deposit", type=float, default=5000.0)
-    ap.add_argument("--commission", type=float, default=0.0, help="USD per lot per side")
+    ap.add_argument("--commission", type=float, default=None,
+                    help="USD per lot per side for every market (default: per market from h002_costs.csv)")
     ap.add_argument("--variant", default="V0-registered", help="name logged in h002_runs.csv")
     ap.add_argument("--note", default="")
     ap.add_argument("--swing-n", type=int)
@@ -631,6 +654,9 @@ def main():
     ap.add_argument("--no-session", action="store_true")
     ap.add_argument("--pessimistic", action="store_true")
     ap.add_argument("--no-log", action="store_true")
+    ap.add_argument("--bar-spreads", action="store_true",
+                    help="use the stored bar spreads as-is (Gate 0: matches the MT5 tester)")
+    ap.add_argument("--spread-x", type=float, default=1.0, help="extra spread multiplier (R5 uses 2)")
     a = ap.parse_args()
 
     prm = Params(require_higher_low=not a.no_higher_low, require_pullback=not a.no_pullback,
@@ -644,6 +670,8 @@ def main():
     specs = load_specs(os.path.join(a.data, "specs.csv"))
     labels = [m for m in markets if m in specs] if a.label.upper() == "ALL" else [a.label]
     fx = fx_table(a.data, a.tf)
+    comm = load_commissions()
+    smult = load_spread_mults()
     os.makedirs(RESULTS_DIR, exist_ok=True)
     rows = []
     for lab in labels:
@@ -652,7 +680,9 @@ def main():
             print(f"  {lab}: no data ({path}) - skipped")
             continue
         bars = load_bars(path)
-        rep = Replica(bars, specs[lab], markets[lab], prm, a.deposit, a.commission, fx)
+        c = a.commission if a.commission is not None else comm.get(lab, 0.0)
+        sm = (1.0 if a.bar_spreads else smult.get(lab, 1.0)) * a.spread_x
+        rep = Replica(bars, specs[lab], markets[lab], prm, a.deposit, c, fx, sm)
         tr = rep.run(a.start, a.end)
         out = os.path.join(RESULTS_DIR, f"{a.variant}_{lab}_{a.tf}_{a.start}_{a.end}.csv")
         tr.to_csv(out, index=False)
@@ -666,7 +696,7 @@ def main():
             print("    by year:\n" + "\n".join("      " + line for line in yb.to_string().splitlines()))
         rows.append({"run_at": datetime.now().strftime("%Y-%m-%d %H:%M"), "variant": a.variant, "note": a.note,
                      "code_version": code_version(), "label": lab, "sector": markets[lab].sector,
-                     "base_tf": a.tf, "from": a.start, "to": a.end, "params": str(asdict(prm)),
+                     "base_tf": a.tf, "from": a.start, "to": a.end, "params": str(asdict(prm)), "spread_mult": sm, "commission": c,
                      **m, "trades_file": os.path.relpath(out, HERE)})
     if rows and not a.no_log:
         df = pd.DataFrame(rows)

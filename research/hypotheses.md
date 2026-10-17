@@ -185,6 +185,21 @@ bar on or before 2023-01-31 and no gap longer than 5 weekdays. AGRI = the first 
 order (COFFEE, SUGAR, WHEAT, CORN, SOYBEAN, COCOA, COTTON) that passes; BOND is recorded missing if US10YR fails.
 Futures roll jumps are measured and reported; trades open across a roll date are flagged.
 
+**14b. Bitcoin weekends — amendment 2026-10-17 (contract fact, before any results).** FP Markets' BTCUSD
+CFD does not trade at weekends (12 Saturday bars in almost four years). 24/7 mode is therefore dropped: BTC
+uses all weekday hours (New York 00:00–24:00) and the normal Friday 16:30 New York close, so no position
+sits through the weekend gap. Weekend Bitcoin would need a different broker and is outside H-002.
+
+**14c. Cost data — amendment 2026-10-17 (before any results).** The cost filter (item 5) was run blind
+(`research/cost_filter.py`: signal stops and spreads only, exits and P&L never recorded). With bar spreads,
+**BOND (25% of median stop) and AGRI = COFFEE (18%) are excluded**; all other markets are under 4%.
+MT5 bar history appears to store the lowest spread in each bar (gold median $0.02, FX 0.0), which would
+understate costs for the strategy, the MT5 tester and the cost filter alike. Before any results:
+real spreads at the start of each hour are sampled from tick history (`mt5/ExportSpreads.mq5`). For each
+market, the median ratio (real tick spread ÷ bar spread, with the bar spread floored at 1 point) becomes
+a spread multiplier used in every replica run and in a re-run of the cost filter; a market that then
+exceeds 10% is excluded too. R5 (spreads × 2) is applied on top of the calibrated spreads.
+
 **15. Separate question: tradable at $100?** From `contracts.md`, list which markets can be sized
 to 1% risk on $100. This never affects the research verdict.
 
