@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-H-002 independent replica of mt5/MS_Gold.mq5 (v1.12)
+H-002 independent replica of mt5/MS_Gold.mq5 (v1.13; the prop-firm guard is modelled in ftmo_sim.py)
 ====================================================
 
 A second, separately written implementation of the same trading rules. If it produces
@@ -80,6 +80,7 @@ class Params:
     leverage: float = 0.0           # 0 = margin not modelled
     max_margin_pct: float = 100.0
     stop_out_pct: float = 50.0
+    friday_entry_cutoff_ny: int = -1  # minute of day (NY); no Friday entries from then (EA InpFridayCutoffNY). -1 = off
     # ablations (all True = the registered rules)
     require_higher_low: bool = True
     require_pullback: bool = True
@@ -334,6 +335,8 @@ class Replica:
         ny = pd.Timestamp(t).to_pydatetime() - timedelta(hours=SERVER_MINUS_NY)
         if p.close_friday and ny.weekday() == 4 and ny.hour * 60 + ny.minute >= p.friday_close_ny:
             return False
+        if p.friday_entry_cutoff_ny >= 0 and ny.weekday() == 4 and ny.hour * 60 + ny.minute >= p.friday_entry_cutoff_ny:
+            return False
         if not p.use_session:
             return ny.weekday() < 5
         loc = zone_time(ny, m.zone)
@@ -516,7 +519,15 @@ class Replica:
     def check_exit(self, t, bid: float, spread: float, is_open: bool) -> bool:
         ps = self.pos
         px = bid if ps.dir > 0 else bid + spread
-        move = (px - ps.entry) * ps.dir
+        # excursions use the price the position actually saw: inside a bar the stop/target fills at its
+        # level, so the bar's extreme beyond it never reaches the account (a gap at the open does)
+        if is_open:
+            seen = px
+        elif ps.dir > 0:
+            seen = min(max(px, ps.sl), ps.tp)
+        else:
+            seen = max(min(px, ps.sl), ps.tp)
+        move = (seen - ps.entry) * ps.dir
         ps.best = max(ps.best, move)
         ps.worst = max(ps.worst, -move)
         if ps.dir > 0:
@@ -682,11 +693,13 @@ def main():
                     help="small account: trade the smallest lot if it risks <= this %% (EA InpMinLotMaxRiskPct)")
     ap.add_argument("--leverage", type=float, default=0.0, help="model margin at this leverage (0 = off)")
     ap.add_argument("--max-margin-pct", type=float, default=100.0, help="EA InpMaxMarginPct")
+    ap.add_argument("--friday-cutoff", default="", help="no Friday entries from this NY time, e.g. 15:00 (FTMO)")
     a = ap.parse_args()
 
     prm = Params(require_higher_low=not a.no_higher_low, require_pullback=not a.no_pullback,
                  use_session=not a.no_session, pessimistic=a.pessimistic,
-                 min_lot_cap_pct=a.min_lot_cap, leverage=a.leverage, max_margin_pct=a.max_margin_pct)
+                 min_lot_cap_pct=a.min_lot_cap, leverage=a.leverage, max_margin_pct=a.max_margin_pct,
+                 friday_entry_cutoff_ny=hhmm(a.friday_cutoff) if a.friday_cutoff else -1)
     if a.swing_n:
         prm.swing_n = a.swing_n
     if a.zone_atr is not None:

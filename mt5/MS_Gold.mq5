@@ -27,7 +27,7 @@
 //    persistent kill switch, live-account guard, phone alerts, CSV journal.
 //
 #property copyright   "orb-bot"
-#property version     "1.12"
+#property version     "1.13"
 #property description "H-002: 4H market structure + 1H pullback entries (built for XAUUSD)."
 #property description "Hard limits: % risk per trade, daily/weekly loss caps, kill switch."
 
@@ -77,6 +77,14 @@ input double InpMaxMarginPct    = 100.0;   // Skip a trade whose margin would us
 input bool   InpResetKillSwitch = false;   // Set true ONCE to clear a tripped kill switch
 input bool   InpAllowLive       = false;   // Must be true to run on a real-money account
 
+input group "Prop firm (FTMO) - off while FtmoInitial = 0"
+input double InpFtmoInitial      = 0.0;    // Prop account's initial capital (e.g. 10000). 0 = off
+input double InpFtmoDailyPct     = 5.0;    // Firm's max daily loss, % of initial, below the balance at the firm's midnight
+input double InpFtmoMaxLossPct   = 10.0;   // Firm's max loss, % of initial (static floor)
+input double InpFtmoGapAllowance = 1.5;    // A new trade's full stop x this must fit inside both limits
+input int    InpServerMinusCET   = 1;      // Server time minus Prague time, hours (FTMO's day resets at Prague midnight)
+input string InpFridayCutoffNY   = "";     // No new entries on Friday from this NY time ("15:00" for FTMO gold). Empty = off
+
 input group "Research (Strategy Tester only - ignored on demo/live)"
 input bool     InpTesterNoLimits = true;                 // Tester: ignore loss limits + kill switch (measure the strategy)
 input datetime InpTesterStopAt   = D'2025.07.01 00:00';  // Tester: stop here (out-of-sample lock). 1970.01.01 = off, for the ONE out-of-sample run
@@ -125,6 +133,11 @@ double   g_jStop         = 0.0;
 double   g_jSpread       = 0.0;
 double   g_jMargin       = 0.0;
 bool     g_jMinLot       = false;
+// prop-firm guard
+int      g_cetDayKey     = -1;
+double   g_cetMidBal     = 0.0;    // balance at the firm's last midnight (Prague time)
+bool     g_propBlocked   = false;  // limit came close today: no new trades until the firm's next day
+int      g_friCutoff     = -1;     // minute of day (NY) after which no Friday entries; -1 = off
 int      g_atrStruct     = INVALID_HANDLE;
 int      g_atrEntry      = INVALID_HANDLE;
 // active setup
@@ -290,6 +303,8 @@ bool InSession(const datetime nyNow)
       return true;
    if(InpCloseFriday && DayOfWeek(nyNow) == 5 && MinuteOfDay(nyNow) >= g_friClose)
       return false;
+   if(g_friCutoff >= 0 && DayOfWeek(nyNow) == 5 && MinuteOfDay(nyNow) >= g_friCutoff)
+      return false;   // prop-firm gap rule: no new trades shortly before the weekend close
    datetime local = ZoneTime(nyNow);
    int dow = DayOfWeek(local);
    if(dow < 1 || dow > 5)
@@ -697,6 +712,27 @@ void TryEnter(const int dir, const double atrE)
    int volDigits = (int)MathMax(0.0, MathCeil(-MathLog10(step) - 1e-9));
    lots = NormalizeDouble(lots, volDigits);
 
+   // Prop-firm guard: the full stop, times a gap allowance, must fit inside both firm limits.
+   if(InpFtmoInitial > 0.0)
+     {
+      double eq   = AccountInfoDouble(ACCOUNT_EQUITY);
+      double room = MathMin(eq - (g_cetMidBal - InpFtmoInitial * InpFtmoDailyPct / 100.0),
+                            eq - InpFtmoInitial * (1.0 - InpFtmoMaxLossPct / 100.0));
+      double fit  = MathFloor(room / InpFtmoGapAllowance / (risk * vpp) / step + 1e-9) * step;
+      if(fit < lots - 1e-9)
+        {
+         if(fit < minLot - 1e-9)
+           {
+            Notify(StringFormat("Setup skipped: only %.2f of room left before the firm's loss limits; even the smallest trade could breach them.",
+                                room));
+            CancelSetup("prop-firm limit");
+            return;
+           }
+         PrintFormat("Prop-firm guard: size cut from %.2f to %.2f lots (room %.2f before the firm's limits).", lots, fit, room);
+         lots = NormalizeDouble(fit, volDigits);
+        }
+     }
+
    // Margin and stop-out checks: on a small account the broker can close the trade
    // (stop-out) before it ever reaches its own stop.
    double margin = 0.0;
@@ -998,6 +1034,41 @@ void ShowStatus()
   }
 
 //+------------------------------------------------------------------+
+//| Prop-firm guard (FTMO-style daily and maximum loss)               |
+//+------------------------------------------------------------------+
+// Returns true when no new trades may be opened right now.
+bool PropGuard()
+  {
+   if(InpFtmoInitial <= 0.0)
+      return false;
+   datetime cet = (datetime)((long)TimeCurrent() - (long)InpServerMinusCET * 3600);
+   int k = DayKey(cet);
+   if(k != g_cetDayKey)
+     {
+      g_cetDayKey   = k;
+      g_cetMidBal   = AccountInfoDouble(ACCOUNT_BALANCE);
+      g_propBlocked = false;
+     }
+   double eq        = AccountInfoDouble(ACCOUNT_EQUITY);
+   double dailyLine = g_cetMidBal - InpFtmoInitial * InpFtmoDailyPct / 100.0;
+   double maxLine   = InpFtmoInitial * (1.0 - InpFtmoMaxLossPct / 100.0);
+   double buffer    = 0.005 * InpFtmoInitial;      // act 0.5% before the firm would
+   if(!g_propBlocked && (eq < dailyLine + buffer || eq < maxLine + buffer))
+     {
+      if(MyPositions() > 0)
+         CloseAll("prop-firm limit close");
+      g_propBlocked = true;
+      g_setupDir    = 0;
+      Notify(StringFormat("PROP LIMIT: equity %.2f is within 0.5%% of the firm's %s line (%.2f). Positions closed; no new trades until the firm's next day.",
+                          eq, (eq < maxLine + buffer) ? "maximum-loss" : "daily-loss",
+                          (eq < maxLine + buffer) ? maxLine : dailyLine));
+     }
+   if(g_propBlocked)
+      g_status = "prop-firm limit: paused until the firm's next day";
+   return g_propBlocked;
+  }
+
+//+------------------------------------------------------------------+
 //| Expert lifecycle                                                  |
 //+------------------------------------------------------------------+
 int OnInit()
@@ -1019,6 +1090,21 @@ int OnInit()
       Print("MaxMarginPct must be between 1 and 100.");
       return INIT_PARAMETERS_INCORRECT;
      }
+   g_friCutoff = (StringLen(InpFridayCutoffNY) > 0) ? ParseHHMM(InpFridayCutoffNY) : -1;
+   if(StringLen(InpFridayCutoffNY) > 0 && g_friCutoff < 0)
+     {
+      Print("FridayCutoffNY must be HH:MM (e.g. 15:00) or empty.");
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   if(InpFtmoInitial < 0.0 || InpFtmoDailyPct <= 0.0 || InpFtmoMaxLossPct <= 0.0 || InpFtmoGapAllowance < 1.0)
+     {
+      Print("Prop-firm inputs: initial >= 0, limits > 0, gap allowance >= 1.");
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   if(InpFtmoInitial > 0.0)
+      PrintFormat("Prop-firm guard ON: initial %.2f, daily %.1f%% below the Prague-midnight balance, max loss %.1f%% (floor %.2f), gap allowance x%.2f.",
+                  InpFtmoInitial, InpFtmoDailyPct, InpFtmoMaxLossPct,
+                  InpFtmoInitial * (1.0 - InpFtmoMaxLossPct / 100.0), InpFtmoGapAllowance);
    bool research = MQLInfoInteger(MQL_TESTER) && InpTesterNoLimits;
    g_limDaily  = research ? 100.0 : InpDailyLossPct;
    g_limWeekly = research ? 100.0 : InpWeeklyLossPct;
@@ -1133,8 +1219,13 @@ void OnTick()
    if(InpCloseFriday && !InpMode24x7 && dow == 5 && nowMin >= g_friClose && MyPositions() > 0)
       CloseAll("Friday close");
 
-   // 2. Kill switch
+   // 2. Kill switch, then the prop-firm guard
    if(KillSwitch())
+     {
+      ShowStatus();
+      return;
+     }
+   if(PropGuard())
      {
       ShowStatus();
       return;

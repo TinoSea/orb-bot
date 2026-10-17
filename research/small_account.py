@@ -48,7 +48,10 @@ def per_ounce(tr: pd.DataFrame) -> pd.DataFrame:
         "move": (tr["exit"] - tr["entry"]) * d,           # gross $ per oz
         "swap": tr["swap"] / oz,
         "comm": tr["commission"] / oz,                    # round trip, $ per oz
-        "mae": tr["mae_R"] * risk,                        # worst open loss, $ per oz
+        # worst open loss, $ per oz. The replica's mae_R (before v1.12) counted the bar's extreme even when the
+        # stop filled inside that bar, overstating it on stopped trades; cap it at the larger of the stop
+        # distance and the actual exit loss (a gap through the stop still shows in full).
+        "mae": np.minimum(tr["mae_R"] * risk, np.maximum(risk, -(tr["exit"] - tr["entry"]) * d)),
         "reason": tr["reason"],
     })
     return out

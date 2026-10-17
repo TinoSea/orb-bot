@@ -294,6 +294,25 @@ Approximation: removing Friday-afternoon trades could free the bot for a setup t
    markets pass H-002 (more trades per year).
 3. Nothing is bought before Gate 0 and the single out-of-sample run pass.
 
+*Result (2026-10-18, in-sample only; full report `research/ftmo_10k.md`).*
+- **Measurement fix made during this run, recorded openly:** the replica's worst-open-loss figure (MAE) counted
+  the bar's extreme even when the stop filled inside that bar, so a few stopped trades showed up to 3.3R of
+  "worst loss". The first FTMO run therefore overstated daily-loss failures. Fixed in `ms_replica.py` (trades and
+  results unchanged; tests identical) and capped in `small_account.per_ounce`. The rule above was not changed;
+  the decision is the same before and after (1.5% risk, 35% → 43%, both below 50%).
+- 111 of 112 trades survive the Friday cutoff: **3.8 trades a month**. Mean after cost stress +0.108R.
+- **Historical rolling starts:** at 1% risk, 9 passes and no fails, but 21 of 30 starts never finished
+  (median 19 months to pass). At 1.5%: 16 pass, 3 fail, 11 unfinished, median 8 months. At 2%: 24 pass, 5 fail.
+- **Monte Carlo, edge halved:** 0.5% → 70% pass but ~9 years; **1% → 51%, ~26 months**; **1.5% → 43%,
+  ~12 months**; 2% → 38%, ~7 months. With **no edge**, 26–30% still pass at any level.
+- **Decision rule:** eligible (median ≤ 18 months) are 1.5% and 2%; the best is **1.5% at 43%, below the 50% bar**.
+  So, as pre-registered: **a gold-only challenge isn't worth the fee yet.** Revisit when more markets pass
+  H-002 (more trades a month makes lower risk fast enough).
+- Context, not part of the rule: the funded year at 1.5% (monthly payouts, 80% split) has a 52% chance of a
+  breach within the year with the edge halved, mean payout about $730. Because losses stop at the firm's limit
+  while payouts are kept, even the no-edge scenario shows positive payouts ($577 mean); that is the firm's
+  business model, and exactly why passing a challenge is not evidence of an edge.
+
 ### Results
 *(none yet)*
 

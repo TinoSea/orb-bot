@@ -81,7 +81,25 @@ The journal (`MS_journal.csv`) now records, for every entry, the planned risk in
 distance, the spread at entry, the margin, and whether the smallest-lot rule was used. That is what the weekly
 review compares against the backtest.
 
-Exact replica of these rules on the raw bars (instead of the quick trade-list replay):
+### FTMO $10,000 2-Step (v1.13, H-002 amendment 17) — after Gate 0 and the out-of-sample pass only
+
+Order the **Swing** account type (no news-time restrictions on stops and targets). Settings on the FTMO MT5 account:
+
+| Input | Value | Why |
+|---|---|---|
+| `InpRiskPercent` | per `research/ftmo_10k.md` (1.0–1.5) | Decided by the pre-registered rule, not by feel |
+| `InpFtmoInitial` | **10000** | Turns on the prop-firm guard |
+| `InpFtmoDailyPct` / `InpFtmoMaxLossPct` | **5** / **10** | FTMO's 2-Step limits |
+| `InpFtmoGapAllowance` | **1.5** | A trade is only opened (or is shrunk) if 1.5 × its stop still fits inside both limits |
+| `InpServerMinusCET` | **1** (check) | FTMO's day resets at Prague midnight; compare MT5's Market Watch clock with Prague time |
+| `InpFridayCutoffNY` | **15:00** | FTMO's gap rule: no new trades within 2 hours of gold's weekend close |
+| `InpDailyLossPct` / `InpWeeklyLossPct` / `InpKillSwitchPct` | 4 / 100 / 100 | FTMO's limits and the guard replace the weekly cap and kill switch |
+| `InpAllowLive` | false | FTMO accounts usually show as demo in MT5. If the bot refuses to start because it sees a REAL account, set true |
+
+The guard also closes everything and pauses until Prague midnight if equity comes within 0.5% of either limit.
+The Friday cutoff can be tested exactly: `python research/ms_replica.py ... --friday-cutoff 15:00`.
+
+Exact replica of the small-account rules on the raw bars (instead of the quick trade-list replay):
 `python research/ms_replica.py --data data/export --label XAUUSD --tf M1 --from 2023-01-01 --to 2025-06-30 --deposit 200 --min-lot-cap 5 --leverage 100 --max-margin-pct 50 --variant SA-P3 --no-log`
 
 ---

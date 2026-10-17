@@ -171,6 +171,24 @@ def test_small_account_policy():
     print("ok  small-account mode: skip at 1%, smallest lot at a 5% cap, margin check refuses at 1:1")
 
 
+def test_friday_cutoff():
+    """FTMO gap rule: with a 15:00 New York cutoff there are no Friday entries at or after 15:00 NY."""
+    rng = np.random.default_rng(21)
+    t = pd.date_range("2024-01-01", "2024-12-31", freq="5min")
+    t = t[t.dayofweek < 5]
+    close = 2000 + np.cumsum(rng.normal(0, 0.6, len(t)))
+    open_ = np.concatenate([[close[0]], close[:-1]])
+    bars = pd.DataFrame({"open": open_, "high": np.maximum(open_, close) + 0.2,
+                         "low": np.minimum(open_, close) - 0.2, "close": close, "spread": 20.0}, index=t)
+    mkt = R.Market("TEST", "test", "NEW_YORK", 0, 24 * 60, False)
+    tr = R.Replica(bars, SPEC, mkt, R.Params(friday_entry_cutoff_ny=15 * 60), deposit=100000.0).run(
+        "2024-02-01", "2024-12-31")
+    ny = pd.to_datetime(tr["entry_time"]) - pd.Timedelta(hours=7)
+    late = (ny.dt.dayofweek == 4) & (ny.dt.hour >= 15)
+    assert len(tr) > 20 and not late.any(), (len(tr), int(late.sum()))
+    print(f"ok  Friday cutoff: {len(tr)} trades, none on Friday after 15:00 New York")
+
+
 if __name__ == "__main__":
     test_fractals_match_ea_loop()
     test_time_zones()
@@ -178,4 +196,5 @@ if __name__ == "__main__":
     test_known_scenario()
     test_random_walk_has_no_edge()
     test_small_account_policy()
+    test_friday_cutoff()
     print("\nAll checks passed.")
