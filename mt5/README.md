@@ -1,3 +1,36 @@
+# Bots for MetaTrader 5
+
+| Bot | Hypothesis | Market | Chart to test on |
+|---|---|---|---|
+| `ORB_US500.mq5` | H-001 opening-range breakout | US500 | M5 |
+| `MS_Gold.mq5` | H-002 4H market structure + 1H pullback | XAUUSD (gold) | **H1** |
+
+Both share the same safety system: % risk sizing, daily/weekly loss limits, kill switch,
+refuses real-money accounts unless `AllowLive` is on, phone alerts and a CSV journal.
+
+## H-002 quick start: MS_Gold
+
+1. **Install:** MetaEditor → File → New → Expert Advisor → name it **MS_Gold** → Next/Finish →
+   select all, delete, paste the code from `mt5/MS_Gold.mq5` → **Compile** (expect 0 errors).
+2. **Add gold:** Market Watch → "+ click to add…" → type **XAUUSD** (FP Markets may add a suffix, e.g. `XAUUSD.r`; use whatever appears).
+3. **Strategy Tester (in-sample run only):**
+
+| Setting | Value |
+|---|---|
+| Expert | MS_Gold |
+| Symbol | XAUUSD (exact FP Markets name) |
+| Timeframe | **H1** |
+| Date | **2023.01.01 → 2025.06.30** (do NOT go past June 2025 yet) |
+| Modelling | 1 minute OHLC |
+| Deposit / Leverage | **5000 USD**, 1:20 (research size so 1% risk is possible on gold) |
+| Inputs | `InpKillSwitchPct`, `InpDailyLossPct`, `InpWeeklyLossPct` = **100** (measurement only) |
+
+4. Send Claude the **Backtest** tab and the **Journal** (select all → copy → paste into a text file).
+
+The out-of-sample period (July 2025 → today) is run **once**, after the in-sample review.
+
+---
+
 # ORB bot for MetaTrader 5 (US500)
 
 `ORB_US500.mq5` is the trading bot (an MT5 "Expert Advisor"). It runs the same opening-range breakout

@@ -50,6 +50,77 @@ before any real money.
 
 ---
 
+## H-002: Higher-timeframe market structure on gold (trend + pullback)
+
+**Registered:** 2026-10-17  **Status:** OPEN  **Candidate primary strategy**
+
+**Idea.** Source: "Trading Course Day 11: Market Structure Entries" (ICC creator, free YouTube series).
+When the 4-hour trend turns (a higher low forms, then price breaks above the last swing high), the level
+that broke is where sellers used to be. Price tends to come back near it, hold, and continue in the new
+direction. Buying that pullback, with the stop under the pullback and the target at the next level where
+sellers reacted before, should pay more than it loses. Mirror image for shorts.
+
+His version is discretionary. This is a **mechanical approximation** so it can be tested honestly.
+If it fails, that rejects *this rule set*, not necessarily everything he teaches.
+
+**Exact rules tested** (code: `mt5/MS_Gold.mq5`)
+- **Swing points (4H):** a swing high is a bar whose high is the highest of the 2 bars either side
+  (5-bar fractal); swing lows likewise. Only confirmed swings are used.
+- **Bullish setup (4H):** latest swing low is higher than the one before it (higher low), AND the last closed
+  4H bar closes above the most recent swing high (fresh break). That swing high = the **level**.
+  **Bearish:** lower high + 4H close below the most recent swing low.
+- **Pullback (1H):** price must trade back to within 0.3 × ATR(14, 4H) of the level.
+- **Entry (1H):** after the pullback, the first 1H bar that closes above the previous 1H bar's high and above
+  the level (shorts: mirror). Entries only 08:00–17:00 New York time. No waiting for 4H confirmation.
+- **Setup cancelled** if a 4H bar closes 0.5 × ATR(4H) back through the level, or no entry within 30 hours.
+- **Stop:** pullback low − 0.1 × ATR(14, 1H) (shorts: pullback high + buffer).
+- **Target:** the nearest earlier 4H swing high above entry that gives at least 1R; if none (e.g. all-time highs), 2R.
+- **Exits:** stop, target, 5 days in the trade, or Friday 16:30 New York (no weekend gaps).
+- **Risk:** 1% per trade, one trade at a time; same daily/weekly limits and kill switch as H-001.
+- **Costs:** broker spread + commission + overnight swap (included by the MT5 tester); 1-minute OHLC modelling.
+
+**Data.** FP Markets XAUUSD history in the MT5 Strategy Tester.
+- In-sample (tuning allowed): **2023-01-01 → 2025-06-30**
+- Out-of-sample (run once): **2025-07-01 → 2026-10-16**
+- Research deposit **$5,000** so position sizes can match 1% risk on gold (see note below). Results judged in R.
+
+**Pass, all on the out-of-sample period** (decided now, before any results)
+1. At least 30 trades
+2. Profit factor ≥ 1.2 and expectancy ≥ +0.15R per trade
+3. Max drawdown ≤ 20%
+4. **Beats the trend for free:** gold rose strongly in 2024–2026. Shorts must not be a disaster
+   (short-side profit factor ≥ 0.9), so the result isn't just "long gold in a bull market".
+5. **Robust:** swing size 3 instead of 2, and pullback zone 0.2 or 0.5 × ATR, still give profit factor ≥ 1.05
+6. **Generalises:** the same rules on US500 are not clearly losing (profit factor ≥ 1.0)
+
+**Fail:** out-of-sample profit factor below 1.05, or criteria 4–5 collapse → reject this rule set.
+
+**Budget:** at most 10 in-sample variations before the single out-of-sample run.
+
+**Practical note on account size:** the smallest gold trade (0.01 lot) moves about $1 per $1 move in gold.
+A typical 1H stop of $10–25 therefore risks $10–25, which is **10–25% of a $100 account**. At $100, this
+strategy cannot respect the 1% rule on gold. If H-002 passes, either the account grows to roughly
+$1,500–2,500 first, or the strategy runs on US500 (which can be sized to $1 risk).
+
+**If it passes:** 6–8 weeks demo trading, then decide on account size.
+
+### Results
+*(none yet)*
+
+### Decision
+*(keep / reject / park, and why)*
+
+---
+
+## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
+
+**Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
+**Idea:** the S&P 500's move from the previous close to 10:00 New York predicts the direction of the last
+30 minutes (15:30–16:00). One trade a day, evenings in Harare. Small edge per trade; costs are the main risk.
+**Status:** parked until H-001 is closed and H-002 has an in-sample result. Full rules to be written before any testing.
+
+---
+
 <!--
 Template for the next one:
 
