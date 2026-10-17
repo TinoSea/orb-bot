@@ -312,6 +312,10 @@ Approximation: removing Friday-afternoon trades could free the bot for a setup t
   breach within the year with the edge halved, mean payout about $730. Because losses stop at the firm's limit
   while payouts are kept, even the no-edge scenario shows positive payouts ($577 mean); that is the firm's
   business model, and exactly why passing a challenge is not evidence of an edge.
+- **MT5 rehearsal (2026-10-18, real ticks, single run, Jan 2023 start, 1.5% risk):** never reached +10%; the
+  2023 losing streak took equity to $9,049 by 30 Oct 2023, after which the guard stopped trading. Effectively a
+  fail after 10 months, matching the Python simulator (the same start fails at 1.5% there too). It also exposed a
+  guard design flaw, fixed in EA v1.14 (see `mt5_results.csv`). Consistent with the decision above: not yet.
 
 ### Results
 **Gate 0 — PASSED (2026-10-18).** MT5 Strategy Tester, MS_Gold v1.13 (commit 251b9c8), XAUUSD.r H1,

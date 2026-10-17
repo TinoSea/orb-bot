@@ -96,7 +96,7 @@ Order the **Swing** account type (no news-time restrictions on stops and targets
 | `InpDailyLossPct` / `InpWeeklyLossPct` / `InpKillSwitchPct` | 4 / 100 / 100 | FTMO's limits and the guard replace the weekly cap and kill switch |
 | `InpAllowLive` | false | FTMO accounts usually show as demo in MT5. If the bot refuses to start because it sees a REAL account, set true |
 
-The guard also closes everything and pauses until Prague midnight if equity comes within 0.5% of either limit.
+The guard keeps a 0.5% safety margin above both limits and sizes every trade so that 1.5 × its stop cannot reach that margin. Near the daily line it closes everything and pauses until Prague midnight; near the static maximum-loss floor it closes everything and stops for good (v1.14), because the floor never moves and the challenge is effectively over.
 The Friday cutoff can be tested exactly: `python research/ms_replica.py ... --friday-cutoff 15:00`.
 
 Exact replica of the small-account rules on the raw bars (instead of the quick trade-list replay):

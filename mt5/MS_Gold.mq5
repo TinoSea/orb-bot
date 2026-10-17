@@ -27,7 +27,7 @@
 //    persistent kill switch, live-account guard, phone alerts, CSV journal.
 //
 #property copyright   "orb-bot"
-#property version     "1.13"
+#property version     "1.14"
 #property description "H-002: 4H market structure + 1H pullback entries (built for XAUUSD)."
 #property description "Hard limits: % risk per trade, daily/weekly loss caps, kill switch."
 
@@ -137,6 +137,7 @@ bool     g_jMinLot       = false;
 int      g_cetDayKey     = -1;
 double   g_cetMidBal     = 0.0;    // balance at the firm's last midnight (Prague time)
 bool     g_propBlocked   = false;  // limit came close today: no new trades until the firm's next day
+bool     g_propDead      = false;  // too close to the max-loss floor to trade again: stopped for good
 int      g_friCutoff     = -1;     // minute of day (NY) after which no Friday entries; -1 = off
 int      g_atrStruct     = INVALID_HANDLE;
 int      g_atrEntry      = INVALID_HANDLE;
@@ -717,7 +718,7 @@ void TryEnter(const int dir, const double atrE)
      {
       double eq   = AccountInfoDouble(ACCOUNT_EQUITY);
       double room = MathMin(eq - (g_cetMidBal - InpFtmoInitial * InpFtmoDailyPct / 100.0),
-                            eq - InpFtmoInitial * (1.0 - InpFtmoMaxLossPct / 100.0));
+                            eq - InpFtmoInitial * (1.0 - InpFtmoMaxLossPct / 100.0)) - PropBuffer();
       double fit  = MathFloor(room / InpFtmoGapAllowance / (risk * vpp) / step + 1e-9) * step;
       if(fit < lots - 1e-9)
         {
@@ -1033,6 +1034,13 @@ void ShowStatus()
                         g_offsetHrs, InpRiskPercent, InpMagic));
   }
 
+// Safety margin kept above the firm's lines: the guard acts here, and new trades are sized so that
+// even a full stop times the gap allowance cannot reach it.
+double PropBuffer()
+  {
+   return 0.005 * InpFtmoInitial;
+  }
+
 //+------------------------------------------------------------------+
 //| Prop-firm guard (FTMO-style daily and maximum loss)               |
 //+------------------------------------------------------------------+
@@ -1041,6 +1049,11 @@ bool PropGuard()
   {
    if(InpFtmoInitial <= 0.0)
       return false;
+   if(g_propDead)
+     {
+      g_status = "prop-firm: stopped for good (too close to the max-loss floor)";
+      return true;
+     }
    datetime cet = (datetime)((long)TimeCurrent() - (long)InpServerMinusCET * 3600);
    int k = DayKey(cet);
    if(k != g_cetDayKey)
@@ -1052,19 +1065,31 @@ bool PropGuard()
    double eq        = AccountInfoDouble(ACCOUNT_EQUITY);
    double dailyLine = g_cetMidBal - InpFtmoInitial * InpFtmoDailyPct / 100.0;
    double maxLine   = InpFtmoInitial * (1.0 - InpFtmoMaxLossPct / 100.0);
-   double buffer    = 0.005 * InpFtmoInitial;      // act 0.5% before the firm would
-   if(!g_propBlocked && (eq < dailyLine + buffer || eq < maxLine + buffer))
+   double buffer    = PropBuffer();
+   if(eq < maxLine + buffer)
+     {
+      // The static floor never moves, so this state is permanent: say so once and stop.
+      if(MyPositions() > 0)
+         CloseAll("prop-firm max-loss guard");
+      g_propDead = true;
+      g_setupDir = 0;
+      Notify(StringFormat("PROP STOP: equity %.2f is within %.2f of the firm's maximum-loss floor (%.2f). "
+                          "The bot has stopped for good on this account; the challenge is effectively over.",
+                          eq, buffer, maxLine));
+      g_status = "prop-firm: stopped for good (too close to the max-loss floor)";
+      return true;
+     }
+   if(!g_propBlocked && eq < dailyLine + buffer)
      {
       if(MyPositions() > 0)
-         CloseAll("prop-firm limit close");
+         CloseAll("prop-firm daily-loss guard");
       g_propBlocked = true;
       g_setupDir    = 0;
-      Notify(StringFormat("PROP LIMIT: equity %.2f is within 0.5%% of the firm's %s line (%.2f). Positions closed; no new trades until the firm's next day.",
-                          eq, (eq < maxLine + buffer) ? "maximum-loss" : "daily-loss",
-                          (eq < maxLine + buffer) ? maxLine : dailyLine));
+      Notify(StringFormat("PROP PAUSE: equity %.2f is within %.2f of the firm's daily-loss line (%.2f). "
+                          "Positions closed; no new trades until Prague midnight.", eq, buffer, dailyLine));
      }
    if(g_propBlocked)
-      g_status = "prop-firm limit: paused until the firm's next day";
+      g_status = "prop-firm daily limit: paused until Prague midnight";
    return g_propBlocked;
   }
 
