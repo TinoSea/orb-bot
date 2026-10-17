@@ -380,6 +380,46 @@ def save_chart(tr: pd.DataFrame, cut, path: str, start_equity: float):
     plt.close(fig)
 
 
+# --------------------------------------------------------------------------- research log
+LOG_PATH = "research/experiments.csv"
+LOG_COLS = [
+    "run_at", "hypothesis", "note", "code_version", "data_source", "symbol", "data_from", "data_to",
+    "days", "bar_min", "or_minutes", "target_r", "stop_mode", "min_range_pts", "max_range_pts",
+    "commission_per_side", "slippage_ticks", "swept",
+    "is_trades", "is_win_rate", "is_profit_factor", "is_expectancy_R", "is_max_dd",
+    "oos_trades", "oos_win_rate", "oos_profit_factor", "oos_expectancy_R", "oos_max_dd",
+    "verdict",
+]
+
+
+def code_version() -> str:
+    """Git commit of the code that produced this result (+ '-modified' if uncommitted edits)."""
+    import subprocess
+    try:
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True,
+                             text=True, check=True).stdout.strip()
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", "orb_backtest.py"],
+                               capture_output=True, text=True).stdout.strip()
+        return sha + ("-modified" if dirty else "")
+    except Exception:
+        return "unknown"
+
+
+def log_experiment(row: dict) -> int:
+    """Append one run to the research log. Returns how many runs this hypothesis now has."""
+    import csv
+    import os
+    os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+    new = not os.path.exists(LOG_PATH)
+    with open(LOG_PATH, "a", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=LOG_COLS, extrasaction="ignore")
+        if new:
+            w.writeheader()
+        w.writerow(row)
+    prior = pd.read_csv(LOG_PATH)
+    return int((prior["hypothesis"].astype(str) == str(row["hypothesis"])).sum())
+
+
 # --------------------------------------------------------------------------- main
 def main():
     p = argparse.ArgumentParser(description="ORB futures backtester")
@@ -397,6 +437,9 @@ def main():
     p.add_argument("--account", type=float)
     p.add_argument("--commission", type=float, help="$ per contract per side")
     p.add_argument("--out", default="trades.csv")
+    p.add_argument("--hyp", default="H-001", help="hypothesis id this run tests (see research/hypotheses.md)")
+    p.add_argument("--note", default="", help="one line: what you changed or why you ran this")
+    p.add_argument("--no-log", action="store_true", help="don't write to research/experiments.csv")
     a = p.parse_args()
 
     cfg = Config(symbol=a.symbol)
@@ -452,7 +495,33 @@ def main():
     if killed:
         print(f"\n  !!! KILL SWITCH hit on {killed}. Live, the bot would have stopped here.")
 
-    print(f"\n  VERDICT: {verdict(m_in, m_out)}\n")
+    v = verdict(m_in, m_out)
+    print(f"\n  VERDICT: {v}\n")
+
+    if a.demo or a.no_log:
+        print("  (Not logged: demo data or --no-log.)\n")
+    else:
+        source = "csv:" + a.csv if a.csv else f"yahoo:{a.interval}"
+        row = {
+            "run_at": datetime.now().strftime("%Y-%m-%d %H:%M"), "hypothesis": a.hyp, "note": a.note,
+            "code_version": code_version(), "data_source": source, "symbol": a.symbol,
+            "data_from": first, "data_to": last, "days": len(set(df.index.date)), "bar_min": bar_min,
+            **{k: asdict(cfg)[k] for k in ("or_minutes", "target_r", "stop_mode", "min_range_pts",
+                                           "max_range_pts", "commission_per_side", "slippage_ticks")},
+            "swept": a.sweep, "verdict": v.split(".")[0],
+        }
+        for tag, m in (("is", m_in), ("oos", m_out)):
+            row[f"{tag}_trades"] = m.get("trades", 0)
+            row[f"{tag}_win_rate"] = m.get("win_rate_%", "")
+            row[f"{tag}_profit_factor"] = m.get("profit_factor", "")
+            row[f"{tag}_expectancy_R"] = m.get("expectancy_R", "")
+            row[f"{tag}_max_dd"] = m.get("max_drawdown_$", "")
+        n = log_experiment(row)
+        print(f"  Logged to {LOG_PATH} as run #{n} for {a.hyp}.")
+        if n >= 10:
+            print(f"  Caution: {n} tests on {a.hyp}. The more variations you try, the more likely")
+            print("  a good result is luck. Raise the bar, or write a new hypothesis.")
+        print()
 
     if not tr.empty:
         tr.to_csv(a.out, index=False)

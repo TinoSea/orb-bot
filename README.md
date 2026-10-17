@@ -3,7 +3,9 @@
 | Part | What it is |
 |---|---|
 | `mt5/ORB_US500.mq5` | **The trading bot** for MetaTrader 5 on US500 (FP Markets). Setup: [`mt5/README.md`](mt5/README.md) |
-| `orb_backtest.py` | Independent Python backtester, used to cross-check the MT5 results |
+| `orb_backtest.py` | Independent Python backtester, used to cross-check the MT5 results. Logs every run to the research log |
+| `research/` | The lab notebook: hypotheses, every test result, weekly trade reviews. See [`research/README.md`](research/README.md) |
+| `LEARNING.md` | Roadmap from this project to institutional-level trading skills |
 
 ---
 
