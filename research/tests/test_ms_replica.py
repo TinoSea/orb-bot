@@ -138,10 +138,44 @@ def test_random_walk_has_no_edge():
           f"(no edge found, as it should be); events {rep.events}")
 
 
+def test_small_account_policy():
+    """EA v1.12 small-account mode on the hand-built scenario (stop ~1.31 price units, 100 units per lot):
+    textbook 1% skips it on $100; the smallest lot (risk ~$1.31 = 1.3%) is taken with a 5% cap but not a
+    1% cap; and at 1:1 leverage the margin check refuses it."""
+    rows = []
+    path = [130, 128, 126, 124, 122, 120, 122, 124, 126, 124, 122, 120, 118, 116, 114, 112] + \
+           [110, 108, 106, 104, 102, 100, 102, 104, 106, 104, 102, 101, 103, 105, 107]
+    for p in path:
+        rows += [[p, p + 0.5, p - 0.5, p + 0.3]] * 4
+    rows += [[107.3, 107.4, 107.0, 107.2], [107.2, 107.4, 106.9, 107.0],
+             [107.0, 108.2, 106.95, 108.0], [108.0, 108.6, 107.9, 108.5]]
+    for k in range(35):
+        p = 108.5 + 0.6 * (k + 1)
+        rows += [[p - 0.6, p + 0.2, p - 0.7, p]]
+    bars = hourly(rows)
+    mkt = R.Market("TEST", "test", "NEW_YORK", 0, 1440, True)
+
+    def run(**kw):
+        rep = R.Replica(bars, SPEC, mkt, R.Params(**kw), deposit=100.0)
+        return rep.run("2025-01-01", "2025-12-31"), rep.events
+
+    tr, ev = run()
+    assert len(tr) == 0 and ev["skip_min_lot"] == 1, (tr, ev)
+    tr, ev = run(min_lot_cap_pct=1.0)
+    assert len(tr) == 0 and ev["skip_min_lot"] == 1, (tr, ev)
+    tr, ev = run(min_lot_cap_pct=5.0)
+    assert len(tr) == 1 and abs(tr.iloc[0]["lots"] - 0.01) < 1e-12, tr
+    assert 1.0 < 100 * tr.iloc[0]["risk_money"] / 100.0 < 5.0, tr.iloc[0]["risk_money"]
+    tr, ev = run(min_lot_cap_pct=5.0, leverage=1.0, max_margin_pct=50.0)
+    assert len(tr) == 0 and ev["skip_margin"] == 1, (tr, ev)
+    print("ok  small-account mode: skip at 1%, smallest lot at a 5% cap, margin check refuses at 1:1")
+
+
 if __name__ == "__main__":
     test_fractals_match_ea_loop()
     test_time_zones()
     test_atr_is_simple_average()
     test_known_scenario()
     test_random_walk_has_no_edge()
+    test_small_account_policy()
     print("\nAll checks passed.")

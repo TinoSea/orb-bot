@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-H-002 independent replica of mt5/MS_Gold.mq5 (v1.10)
+H-002 independent replica of mt5/MS_Gold.mq5 (v1.12)
 ====================================================
 
 A second, separately written implementation of the same trading rules. If it produces
@@ -30,6 +30,8 @@ Usage:
 Options: --variant NAME (logged), --no-higher-low / --no-pullback / --no-session (ablations),
          --pessimistic (stop assumed first whenever stop and target share a bar),
          --commission USD_PER_LOT_PER_SIDE (default: research/h002_costs.csv), --swing-n, --zone-atr
+         Small account (amendment 16): --deposit 200 --min-lot-cap 5 --leverage 100 --max-margin-pct 50
+           (EA inputs InpMinLotMaxRiskPct / InpMaxMarginPct; margin = lots x USD per point x price / leverage)
 
 Not financial advice. A backtest is evidence, not a promise.
 """
@@ -73,6 +75,11 @@ class Params:
     allow_short: bool = True
     risk_pct: float = 1.0
     max_spread_frac: float = 0.15
+    # small account (EA v1.12): smallest lot allowed up to this % risk (0 = off, textbook 1% only)
+    min_lot_cap_pct: float = 0.0
+    leverage: float = 0.0           # 0 = margin not modelled
+    max_margin_pct: float = 100.0
+    stop_out_pct: float = 50.0
     # ablations (all True = the registered rules)
     require_higher_low: bool = True
     require_pullback: bool = True
@@ -279,7 +286,7 @@ class Replica:
         self.last_struct = None
         self.trades: list[dict] = []
         self.events = {"setups": 0, "cancel_failed": 0, "cancel_expired": 0, "skip_min_lot": 0,
-                       "skip_spread": 0, "entries": 0}
+                       "skip_spread": 0, "skip_margin": 0, "skip_stop_out": 0, "entries": 0}
 
     # ---- helpers
     def norm(self, p: float) -> float:
@@ -404,10 +411,24 @@ class Replica:
         lots = math.floor(risk_money / (risk * vpp) / step + 1e-9) * step
         lots = min(lots, vmax)
         if lots < vmin - 1e-9:
-            self.events["skip_min_lot"] += 1
-            self.cancel("min_lot")
-            return
+            cap = self.p.min_lot_cap_pct
+            if cap > 0 and vmin * risk * vpp <= self.balance * cap / 100.0:
+                lots = vmin                                   # EA v1.12 small-account mode
+            else:
+                self.events["skip_min_lot"] += 1
+                self.cancel("min_lot")
+                return
         lots = round(lots, max(0, int(math.ceil(-math.log10(step) - 1e-9))))
+        if self.p.leverage > 0:                               # EA v1.12 margin and stop-out checks
+            margin = lots * vpp * entry / self.p.leverage
+            if margin > self.balance * self.p.max_margin_pct / 100.0:
+                self.events["skip_margin"] += 1
+                self.cancel("margin")
+                return
+            if self.balance - lots * risk * vpp < margin * self.p.stop_out_pct / 100.0:
+                self.events["skip_stop_out"] += 1
+                self.cancel("stop_out")
+                return
         target = self.find_target(d, entry, risk, k1)
         sl, tp = self.norm(stop), self.norm(target)
         self.pos = Position(d, pd.Timestamp(t).to_pydatetime(), entry, sl, tp, lots, lots * risk * vpp,
@@ -657,10 +678,15 @@ def main():
     ap.add_argument("--bar-spreads", action="store_true",
                     help="use the stored bar spreads as-is (Gate 0: matches the MT5 tester)")
     ap.add_argument("--spread-x", type=float, default=1.0, help="extra spread multiplier (R5 uses 2)")
+    ap.add_argument("--min-lot-cap", type=float, default=0.0,
+                    help="small account: trade the smallest lot if it risks <= this %% (EA InpMinLotMaxRiskPct)")
+    ap.add_argument("--leverage", type=float, default=0.0, help="model margin at this leverage (0 = off)")
+    ap.add_argument("--max-margin-pct", type=float, default=100.0, help="EA InpMaxMarginPct")
     a = ap.parse_args()
 
     prm = Params(require_higher_low=not a.no_higher_low, require_pullback=not a.no_pullback,
-                 use_session=not a.no_session, pessimistic=a.pessimistic)
+                 use_session=not a.no_session, pessimistic=a.pessimistic,
+                 min_lot_cap_pct=a.min_lot_cap, leverage=a.leverage, max_margin_pct=a.max_margin_pct)
     if a.swing_n:
         prm.swing_n = a.swing_n
     if a.zone_atr is not None:

@@ -27,7 +27,7 @@
 //    persistent kill switch, live-account guard, phone alerts, CSV journal.
 //
 #property copyright   "orb-bot"
-#property version     "1.11"
+#property version     "1.12"
 #property description "H-002: 4H market structure + 1H pullback entries (built for XAUUSD)."
 #property description "Hard limits: % risk per trade, daily/weekly loss caps, kill switch."
 
@@ -72,6 +72,8 @@ input double InpDailyLossPct    = 2.0;     // Stop for the day after losing this
 input double InpWeeklyLossPct   = 5.0;     // Stop for the week after losing this % of balance
 input double InpKillSwitchPct   = 15.0;    // Stop for good after this % drawdown from peak equity
 input double InpMaxSpreadFrac   = 0.15;    // Skip entry if spread is more than this fraction of the stop
+input double InpMinLotMaxRiskPct = 0.0;    // Small account: trade the smallest lot when 1% is below it, if it risks <= this % (0 = never, max 5)
+input double InpMaxMarginPct    = 100.0;   // Skip a trade whose margin would use more than this % of free margin (small account: 50)
 input bool   InpResetKillSwitch = false;   // Set true ONCE to clear a tripped kill switch
 input bool   InpAllowLive       = false;   // Must be true to run on a real-money account
 
@@ -117,6 +119,12 @@ double   g_limKill       = 15.0;
 bool     g_lockDone      = false;
 string   g_status        = "";
 double   g_entryRisk     = 0.0;
+// filled at entry, written to the journal on the IN deal (live vs backtest reconciliation)
+double   g_jRiskPct      = 0.0;
+double   g_jStop         = 0.0;
+double   g_jSpread       = 0.0;
+double   g_jMargin       = 0.0;
+bool     g_jMinLot       = false;
 int      g_atrStruct     = INVALID_HANDLE;
 int      g_atrEntry      = INVALID_HANDLE;
 // active setup
@@ -662,18 +670,60 @@ void TryEnter(const int dir, const double atrE)
       Print("Symbol data unavailable - no trade.");
       return;
      }
-   double riskMoney = AccountInfoDouble(ACCOUNT_BALANCE) * InpRiskPercent / 100.0;
+   double balance   = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskMoney = balance * InpRiskPercent / 100.0;
    double lots      = MathFloor(riskMoney / (risk * vpp) / step + 1e-9) * step;
    lots = MathMin(lots, maxLot);
+   bool minLotMode = false;
    if(lots < minLot - 1e-9)
      {
-      Notify(StringFormat("Setup skipped: the smallest trade (%.2f lots) would risk %.2f, above your %.2f%% limit (%.2f).",
-                          minLot, minLot * risk * vpp, InpRiskPercent, riskMoney));
-      CancelSetup("risk too big for limits");
-      return;
+      // Small-account mode (H-002 amendment 16, policy P3): the smallest lot is allowed
+      // only while it risks no more than InpMinLotMaxRiskPct of the balance.
+      double minRisk = minLot * risk * vpp;
+      if(InpMinLotMaxRiskPct > 0.0 && minRisk <= balance * InpMinLotMaxRiskPct / 100.0)
+        {
+         lots = minLot;
+         minLotMode = true;
+        }
+      else
+        {
+         Notify(StringFormat("Setup skipped: the smallest trade (%.2f lots) would risk %.2f (%.1f%% of balance), above your limit (%.2f%%).",
+                             minLot, minRisk, 100.0 * minRisk / balance,
+                             MathMax(InpRiskPercent, InpMinLotMaxRiskPct)));
+         CancelSetup("risk too big for limits");
+         return;
+        }
      }
    int volDigits = (int)MathMax(0.0, MathCeil(-MathLog10(step) - 1e-9));
    lots = NormalizeDouble(lots, volDigits);
+
+   // Margin and stop-out checks: on a small account the broker can close the trade
+   // (stop-out) before it ever reaches its own stop.
+   double margin = 0.0;
+   ENUM_ORDER_TYPE ot = (dir > 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   if(OrderCalcMargin(ot, _Symbol, lots, entry, margin) && margin > 0.0)
+     {
+      double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
+      if(margin > freeMargin * InpMaxMarginPct / 100.0)
+        {
+         Notify(StringFormat("Setup skipped: margin %.2f for %.2f lots is above %.0f%% of free margin (%.2f). Check the account leverage.",
+                             margin, lots, InpMaxMarginPct, freeMargin));
+         CancelSetup("margin too large");
+         return;
+        }
+      if(AccountInfoInteger(ACCOUNT_MARGIN_SO_MODE) == ACCOUNT_STOPOUT_MODE_PERCENT)
+        {
+         double soPct       = AccountInfoDouble(ACCOUNT_MARGIN_SO_SO);
+         double equityAtStop = AccountInfoDouble(ACCOUNT_EQUITY) - lots * risk * vpp;
+         if(equityAtStop < margin * soPct / 100.0)
+           {
+            Notify(StringFormat("Setup skipped: at the stop, equity (%.2f) would be below the broker's %.0f%% stop-out level for this margin (%.2f).",
+                                equityAtStop, soPct, margin));
+            CancelSetup("stop-out before stop");
+            return;
+           }
+        }
+     }
 
    double target = FindTarget(dir, entry, risk);
    double sl = NormPrice(stop);
@@ -685,9 +735,15 @@ void TryEnter(const int dir, const double atrE)
    if(ok && (rc == TRADE_RETCODE_DONE || rc == TRADE_RETCODE_PLACED))
      {
       g_entryRisk = lots * risk * vpp;
-      Notify(StringFormat("ENTERED %s %.2f lots @ %.2f | stop %.2f | target %.2f (%.1fR) | risk %.2f",
+      g_jRiskPct  = 100.0 * g_entryRisk / balance;
+      g_jStop     = risk;
+      g_jSpread   = spread;
+      g_jMargin   = margin;
+      g_jMinLot   = minLotMode;
+      Notify(StringFormat("ENTERED %s %.2f lots @ %.2f | stop %.2f | target %.2f (%.1fR) | risk %.2f (%.1f%%%s)",
                           (dir > 0) ? "LONG" : "SHORT", lots, trade.ResultPrice(), sl, tp,
-                          MathAbs(tp - entry) / risk, g_entryRisk));
+                          MathAbs(tp - entry) / risk, g_entryRisk, g_jRiskPct,
+                          minLotMode ? ", smallest lot" : ""));
       g_status   = StringFormat("in trade: %s %.2f lots", (dir > 0) ? "LONG" : "SHORT", lots);
       g_setupDir = 0;
       g_touched  = false;
@@ -869,7 +925,9 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
       return;
    if(FileSize(h) == 0)
       FileWrite(h, "server_time", "ny_time", "entry", "side", "lots", "price",
-                "profit", "commission", "swap", "reason", "balance");
+                "profit", "commission", "swap", "reason", "balance",
+                "risk_money", "risk_pct", "stop_dist", "spread", "margin", "min_lot_mode");
+   bool isIn = (entry == DEAL_ENTRY_IN);
    FileSeek(h, 0, SEEK_END);
    FileWrite(h,
              TimeToString(t, TIME_DATE | TIME_MINUTES),
@@ -882,7 +940,13 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
              DoubleToString(comm, 2),
              DoubleToString(swap, 2),
              ReasonText(reason),
-             DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2));
+             DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2),
+             isIn ? DoubleToString(g_entryRisk, 2) : "",
+             isIn ? DoubleToString(g_jRiskPct, 2) : "",
+             isIn ? DoubleToString(g_jStop, _Digits) : "",
+             isIn ? DoubleToString(g_jSpread, _Digits) : "",
+             isIn ? DoubleToString(g_jMargin, 2) : "",
+             isIn ? (g_jMinLot ? "1" : "0") : "");
    FileClose(h);
   }
 
@@ -910,7 +974,15 @@ void ReportSymbol()
       PrintFormat("Risk per trade: %.2f%% of balance = %.2f. A typical stop (~%.2f) at the smallest size risks %.2f.",
                   InpRiskPercent, riskMoney, typical, minRisk);
       if(minRisk > riskMoney)
-         Print("WARNING: at this balance most setups will be SKIPPED - even the smallest trade risks more than your limit.");
+        {
+         double bal = AccountInfoDouble(ACCOUNT_BALANCE);
+         if(InpMinLotMaxRiskPct > 0.0)
+            PrintFormat("Small-account mode: the smallest lot is used when it risks at most %.1f%% (= %.2f). "
+                        "A typical stop at the smallest lot is %.1f%% of balance; setups with wider stops are skipped.",
+                        InpMinLotMaxRiskPct, bal * InpMinLotMaxRiskPct / 100.0, 100.0 * minRisk / bal);
+         else
+            Print("WARNING: at this balance most setups will be SKIPPED - even the smallest trade risks more than your limit.");
+        }
      }
    else
       PrintFormat("Risk per trade: %.2f%% of balance = %.2f.", InpRiskPercent, riskMoney);
@@ -934,6 +1006,17 @@ int OnInit()
      {
       Print(StringFormat("RiskPercent = %.2f looks wrong (allowed 0.01-3). Did you mean to change a loss limit instead?",
                          InpRiskPercent));
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   if(InpMinLotMaxRiskPct < 0.0 || InpMinLotMaxRiskPct > 5.0)
+     {
+      Print(StringFormat("MinLotMaxRiskPct = %.2f is outside 0-5. Above 5%% per trade a run of normal losses can halve the account "
+                         "(research/small_account.md).", InpMinLotMaxRiskPct));
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   if(InpMaxMarginPct <= 0.0 || InpMaxMarginPct > 100.0)
+     {
+      Print("MaxMarginPct must be between 1 and 100.");
       return INIT_PARAMETERS_INCORRECT;
      }
    bool research = MQLInfoInteger(MQL_TESTER) && InpTesterNoLimits;

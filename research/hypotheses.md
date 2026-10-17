@@ -234,6 +234,24 @@ If any fails, the $200 goes to demo-plus-US500 (same rules, sized at 1%) until g
 1% risk (about $2,100 at today's price). Even if all pass, it stays provisional until Gate 0, calibrated
 spreads and the single out-of-sample run.
 
+*Result (2026-10-17, in-sample only; full report `research/small_account.md`).*
+- **P1** takes **0 of 112** trades at $200: the textbook rule simply doesn't trade gold this small.
+- **P2 fails** tests 1 and 2: at today's price the median trade risks 12–19% of the balance, there is a
+  **41% chance of losing half within 100 trades**, and with cost stress the in-order replay is wiped out
+  after 21 trades. It made money in the historical replay only because gold was cheaper then (median risk 6%),
+  and even there it fell to $107 first.
+- **P3 passes** tests 1–2, and test 3 only at leverage 1:100 or higher (13 breaches at 1:20). But it takes only
+  **13 of 112** trades at today's price (about 5 a year) and earns about **$0.43 a month**. The rule as written
+  had no minimum-activity test; that gap is recorded here rather than patched after seeing the numbers.
+- **Edge check (context, not part of the rule):** in-sample expectancy +0.135R, but the 95% bootstrap range is
+  −0.09R to +0.36R, and 12% of random walks run through the same rules did as well. Shorts were positive
+  (+0.09R), so it isn't only "long gold". In-sample alone, the edge is not yet distinguishable from luck.
+
+*Decision for the $200:* no live gold. P2 is a ruin policy at this size; P3 is safe but too inactive to
+produce either income or evidence. Gold stays on demo (EA v1.12, `InpMinLotMaxRiskPct = 5`, to rehearse the
+small-account mechanics) until the account can hold 1 oz at about 1% risk (~$2,100 at today's price).
+Real money, if any, waits for Gate 0 and the out-of-sample verdict.
+
 ### Results
 *(none yet)*
 

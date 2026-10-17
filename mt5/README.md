@@ -56,11 +56,33 @@ This script reads the real first ticks at the start of every hour for the last 9
 | Date | **Custom period: 2023.01.01 → 2025.06.30** (the EA also stops itself at 2025.07.01) |
 | Modelling | 1 minute OHLC |
 | Deposit / Leverage | **5000 USD**, 1:20 (research size so 1% risk is possible on gold) |
-| Inputs | **Leave all defaults** (v1.11). In the tester it automatically ignores the loss limits and kill switch, and stops at 2025.07.01 (out-of-sample lock). `InpRiskPercent` must stay **1.0**. Session: zone **NEW_YORK**, **08:00–17:00** (other markets: use the zone and hours in `research/h002_markets.csv`; BTC: NEW_YORK 00:00–24:00, `InpMode24x7` = false, because FP Markets' BTC is closed at weekends) |
+| Inputs | **Leave all defaults** (v1.12; the small-account inputs default to off, so Gate 0 is unchanged). In the tester it automatically ignores the loss limits and kill switch, and stops at 2025.07.01 (out-of-sample lock). `InpRiskPercent` must stay **1.0**. Session: zone **NEW_YORK**, **08:00–17:00** (other markets: use the zone and hours in `research/h002_markets.csv`; BTC: NEW_YORK 00:00–24:00, `InpMode24x7` = false, because FP Markets' BTC is closed at weekends) |
 
 4. Send Claude the **Backtest** tab and the **Journal** (select all → copy → paste into a text file).
 
 The out-of-sample period (July 2025 → today) is run **once**, after the in-sample review.
+
+### Small account (v1.12, H-002 amendment 16) — demo only for now
+
+At $200 the 1% rule can't trade gold: the smallest position (0.01 lot = 1 oz) risks about $21 at today's
+price, ~10% of the account. `research/small_account.md` shows why the bot will not simply "always trade the
+smallest lot". For a **demo** rehearsal at $200:
+
+| Input | Value | What it does |
+|---|---|---|
+| `InpMinLotMaxRiskPct` | **5** | Trades 0.01 lot when it risks ≤ 5% of the balance; skips wider stops. The bot refuses values above 5. |
+| `InpMaxMarginPct` | **50** | Skips a trade whose margin would use more than half the free margin. |
+
+The bot also skips any trade where, at its stop, equity would be below the broker's stop-out level, so the
+broker can't close it before the stop does. **Check your leverage first** (Navigator → right-click the account
+→ Details): 1 oz of gold at ~$4,190 needs about $210 margin at 1:20, $42 at 1:100, $8 at 1:500.
+
+The journal (`MS_journal.csv`) now records, for every entry, the planned risk in money and %, the stop
+distance, the spread at entry, the margin, and whether the smallest-lot rule was used. That is what the weekly
+review compares against the backtest.
+
+Exact replica of these rules on the raw bars (instead of the quick trade-list replay):
+`python research/ms_replica.py --data data/export --label XAUUSD --tf M1 --from 2023-01-01 --to 2025-06-30 --deposit 200 --min-lot-cap 5 --leverage 100 --max-margin-pct 50 --variant SA-P3 --no-log`
 
 ---
 
