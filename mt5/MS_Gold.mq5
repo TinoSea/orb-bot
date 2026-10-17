@@ -1098,6 +1098,7 @@ bool PropGuard()
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   Print("MS_Gold version 1.14 (if this line is missing, MetaTrader is running an older compiled copy)");
    if(InpRiskPercent <= 0.0 || InpRiskPercent > 3.0)
      {
       Print(StringFormat("RiskPercent = %.2f looks wrong (allowed 0.01-3). Did you mean to change a loss limit instead?",
