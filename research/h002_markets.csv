@@ -2,17 +2,17 @@ label,sector,aliases,session_zone,session_start,session_end,mode_24x7,notes
 US500,US equity,US500|SPX500|US500.cash,NEW_YORK,09:30,16:00,0,NYSE/Nasdaq cash session
 US100,US equity,US100|NAS100|USTEC|NDX100,NEW_YORK,09:30,16:00,0,NYSE/Nasdaq cash session
 US30,US equity,US30|DJ30|WS30|DOW30,NEW_YORK,09:30,16:00,0,NYSE/Nasdaq cash session
-US2000,US equity,US2000|RUSSELL2000|RUS2000|RTY|US2K,NEW_YORK,09:30,16:00,0,NYSE/Nasdaq cash session
+US2000,US equity,US2000|RUSSELL2000|RUS2000|RTY|US2K,NEW_YORK,09:30,16:00,0,NOT OFFERED by FP Markets (2026-10-17); recorded missing - not substituted
 UK100,Non-US equity,UK100|FTSE100|FTSE,LONDON,08:00,16:30,0,LSE cash session
 GER40,Non-US equity,GER40|DE40|GER30|DAX40|DE30,FRANKFURT,09:00,17:30,0,Xetra cash session
 JP225,Non-US equity,JP225|JPN225|NIKKEI225|NIK225,TOKYO,09:00,15:00,0,TSE cash session (lunch break ignored)
-BOND,Rates,UST10Y|US10Y|USTN10Y|TNOTE|T-NOTE|BUND|EUBUND|BUND10Y,NEW_YORK,08:00,15:00,0,US 10Y preferred; if only Bund exists use FRANKFURT 08:00-17:15
+BOND,Rates,UST10Y|US10Y|USTN10Y|TNOTE|T-NOTE|BUND|EUBUND|BUND10Y,NEW_YORK,08:00,15:00,0,FP Markets: US10YR (T-Note futures CFD; rolls) - subject to the data-coverage rule in hypotheses.md
 EURUSD,FX,EURUSD.r|EURUSD,LONDON,08:00,22:00,0,London open to New York close
 USDJPY,FX,USDJPY.r|USDJPY,LONDON,08:00,22:00,0,London open to New York close
 GBPUSD,FX,GBPUSD.r|GBPUSD,LONDON,08:00,22:00,0,London open to New York close
 AUDUSD,FX,AUDUSD.r|AUDUSD,LONDON,08:00,22:00,0,London open to New York close
 XAUUSD,Metals,XAUUSD.r|XAUUSD|GOLD,NEW_YORK,08:00,17:00,0,H-002 primary market (as originally registered)
 XAGUSD,Metals,XAGUSD.r|XAGUSD|SILVER,NEW_YORK,08:00,17:00,0,Same metals rule as gold
-WTI,Energy,XTIUSD|USOIL|WTI|CRUDE|CL,NEW_YORK,09:00,14:30,0,NYMEX main session
+WTI,Energy,XTIUSD|USOIL|WTI|CRUDE|CL,NEW_YORK,09:00,14:30,0,NYMEX main session; FP Markets: XTIUSD (cash)
 BTCUSD,Crypto,BTCUSD|BITCOIN|BTCUSD.r,NEW_YORK,00:00,24:00,1,24/7 mode: weekends allowed and no Friday close
-AGRI,Agriculture,COFFEE|SUGAR|WHEAT|CORN|SOYBEAN|COCOA|COTTON,NEW_YORK,09:30,14:00,0,First match only; ICE/CBOT day session
+AGRI,Agriculture,COFFEE|SUGAR|WHEAT|CORN|SOYBEAN|COCOA|COTTON,NEW_YORK,09:30,14:00,0,All candidates exported as AGRI_<SYMBOL>; first in this order passing the data-coverage rule is used

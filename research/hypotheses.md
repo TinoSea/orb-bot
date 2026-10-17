@@ -177,6 +177,14 @@ if the drawdown in R exceeds the simulated 95th percentile for that number of tr
 **14. Variant budget.** Every run is logged automatically in `research/h002_runs.csv`. At most 15
 distinct variants (V0 registered + A1–A3 + R1–R5 + up to 6 others), baselines excluded.
 
+**14a. Symbol mapping and data-coverage rule — amendment 2026-10-17, made after seeing only the
+broker's symbol list and before any H-002 price data was examined.** FP Markets names are recorded in
+`research/contracts.md`. US2000 is not offered (recorded missing). For any market whose broker symbol is a
+rolling futures contract (BOND = US10YR; AGRI candidates), the data must cover the in-sample period: first
+bar on or before 2023-01-31 and no gap longer than 5 weekdays. AGRI = the first candidate in the registered
+order (COFFEE, SUGAR, WHEAT, CORN, SOYBEAN, COCOA, COTTON) that passes; BOND is recorded missing if US10YR fails.
+Futures roll jumps are measured and reported; trades open across a roll date are flagged.
+
 **15. Separate question: tradable at $100?** From `contracts.md`, list which markets can be sized
 to 1% risk on $100. This never affects the research verdict.
 

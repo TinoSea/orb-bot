@@ -14,7 +14,9 @@ refuses real-money accounts unless `AllowLive` is on, phone alerts and a CSV jou
 2. **Install the script:** MetaEditor → **File → New → Script** (not Expert Advisor) → name **ExportData** → Next/Finish →
    select all, delete, paste `mt5/ExportData.mq5` → **Compile**.
 3. **Run it:** in MT5's **Navigator → Scripts**, drag **ExportData** onto any chart → keep the defaults → OK.
-   Leave MT5 alone until the "Export finished" alert appears.
+   Leave MT5 alone until the "Export finished" alert appears. **Don't start it again while it runs**:
+   a second start stops the first (error 4022 in the log). If it does get stopped, just run it again:
+   v1.10 skips markets already finished (they get a `.done` file) and appends to `export_log.txt`.
 4. **Collect the files:** in Finder press **Cmd + Shift + G** and paste:
    ```
    ~/Library/Application Support/net.metaquotes.wine.metatrader5/drive_c/Program Files/MetaTrader 5/MQL5/Files/orb_export
