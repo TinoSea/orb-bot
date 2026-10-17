@@ -252,6 +252,48 @@ produce either income or evidence. Gold stays on demo (EA v1.12, `InpMinLotMaxRi
 small-account mechanics) until the account can hold 1 oz at about 1% risk (~$2,100 at today's price).
 Real money, if any, waits for Gate 0 and the out-of-sample verdict.
 
+**17. FTMO $10,000 2-Step Challenge — amendment 2026-10-18, written before any FTMO numbers were computed.**
+Question: if the gold bot ran an FTMO $10,000 2-Step Challenge, how likely is it to pass both phases,
+how long would it take, and at what risk per trade? Like 16, this is a deployment question; it never
+changes the research verdict, and no challenge is bought before Gate 0 and the out-of-sample pass.
+
+*FTMO rules modelled* (ftmo.com Trading Objectives and FAQ, read 2026-10-18):
+- Phase 1 target +10% ($11,000), Phase 2 (Verification) +5% ($10,500, fresh $10,000 account).
+- **Maximum Daily Loss:** equity must stay above the balance at the previous 00:00 CE(S)T minus $500
+  (5% of initial), commissions and swaps included. CE(S)T midnight = FP Markets server time 01:00.
+- **Maximum Loss:** equity must stay above $9,000 (static).
+- At least 4 trading days per phase; no time limit.
+- **Gap-trading rule** (Forbidden Trading Practices, all phases): no new trades within 2 hours of a market
+  closing for 2+ hours. Gold closes for the weekend at 17:00 New York, so Friday entries after **15:00 New York
+  are removed**. (Gold's daily break is 1 hour, so it is unaffected.)
+- **Account type: Swing.** FTMO's news window (no order execution, stops and targets included, 2 minutes either
+  side of restricted USD releases) applies to Standard funded accounts and covers gold. The bot can't control
+  when its stop or target is hit, so Standard would carry an unmanageable rule risk. Swing has no news window.
+
+*How the trades are used.* The in-sample gold trade list (`results/h002/gate0/replica_XAUUSD_M1_IS.csv`) in R,
+resized to the account: risk per trade × balance at entry. Worst equity during a trade = balance before it −
+MAE × risk. For the daily limit the reference is the higher of the CE(S)T-midnight balance and the balance at
+entry (conservative). Cost stress +$0.30 per ounce per round trip, as in amendment 16.
+Approximation: removing Friday-afternoon trades could free the bot for a setup the list doesn't contain.
+
+*Risk levels tested:* 0.5%, 1.0%, 1.5%, 2.0% per trade.
+
+*Runs* (`research/ftmo_sim.py`)
+- **A. Historical rolling starts:** a challenge started at the first trade of each month, January 2023 to June 2025,
+  trading the real sequence. Each start ends passed, failed, or unfinished (data ran out).
+- **B. Monte Carlo,** 10,000 challenges, resampling whole trading days (so same-day losses stay together), three
+  edge scenarios: **as measured**, **edge halved** (half the in-sample mean R subtracted from every trade), and
+  **no edge** (mean R subtracted). Pass = both phases.
+- **C. Funded year:** 12 months on a funded $10,000 account at the chosen risk: expected profit, 80% split,
+  and the chance of hitting the Maximum Loss within the year.
+
+*Decision rule* (all in-sample; scenario "edge halved", because in-sample edges usually shrink out of sample):
+1. Risk per trade = the level with the **highest probability of passing both phases**, among levels whose
+   median time to pass is **≤ 18 months** at the in-sample trade rate.
+2. If no level reaches **50%** pass probability, gold-only is not worth a challenge fee; revisit once more
+   markets pass H-002 (more trades per year).
+3. Nothing is bought before Gate 0 and the single out-of-sample run pass.
+
 ### Results
 *(none yet)*
 
