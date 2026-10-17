@@ -1,4 +1,13 @@
-# ORB Bot — Backtester v1
+# ORB Bot
+
+| Part | What it is |
+|---|---|
+| `mt5/ORB_US500.mq5` | **The trading bot** for MetaTrader 5 on US500 (FP Markets). Setup: [`mt5/README.md`](mt5/README.md) |
+| `orb_backtest.py` | Independent Python backtester, used to cross-check the MT5 results |
+
+---
+
+## Python backtester v1
 
 Opening-range breakout on MES (micro S&P 500 futures), with hard risk rules and honest costs.
 This stage spends **$0**. Its only job is to find out whether the strategy has a real edge.
