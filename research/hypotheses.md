@@ -203,6 +203,37 @@ exceeds 10% is excluded too. R5 (spreads × 2) is applied on top of the calibrat
 **15. Separate question: tradable at $100?** From `contracts.md`, list which markets can be sized
 to 1% risk on $100. This never affects the research verdict.
 
+**16. The $200 gold account — amendment 2026-10-17, written before any dollar results were computed.**
+This is a sizing question, not a new signal. It never changes the research verdict (items 12 and the
+original gold criteria); it decides whether *this* account can trade *this* strategy safely.
+
+*Facts fixed now (from contract terms and public prices, not strategy results).* The smallest gold position
+anywhere Tino can trade is **1 troy ounce**: 0.01 lot of XAUUSD.r at FP Markets, or one CME 1-Ounce Gold
+future (Micro Gold MGC is 10 oz). 1 oz moves $1 per $1 of gold. In-sample, the median stop was **0.50% of
+price** (90th percentile 1.19%); stops scale with price. Gold was about **$4,190** on 2026-10-12. So at
+today's price the median stop is about $21 = **~10% of $200** on the smallest possible trade.
+
+*Sizing policies tested* (`research/small_account.py`), on the in-sample gold trade list only:
+- **P1 Textbook:** 1% risk; skip any trade where 1 oz would risk more than 1%.
+- **P2 Minimum lot:** every signal at least 1 oz; more only when the 1% rule allows it.
+- **P3 Capped:** like P2, but skip the trade if 1 oz would risk more than **5%** of the balance.
+  (P3 filters trades by stop width, which can change expectancy; that is why it is tested, not assumed.)
+
+*Runs.* (a) Historical: the in-sample trades at their own prices, $200 start. (b) **Today's prices:** each trade
+rescaled to a $4,190 gold price (stop, P&L, swap and spread in % of price), $200 start. (c) Cost stress:
+(b) plus an extra **$0.30 per ounce per round trip** for spread and slippage the bar data may miss (amendment 14c).
+(d) Monte Carlo: 10,000 random orderings (trades drawn with replacement) of 100 trades under (c).
+Margin checked at leverage 1:20, 1:100 and 1:500; FP Markets' stop-out assumed at 50% margin level.
+
+*Decision rule for trading gold with $200 (all at today's prices, run c/d):*
+1. Probability of losing half the account within 100 trades ≤ 10%;
+2. Median risk per trade ≤ 5% of the balance;
+3. At the account's real leverage, margin for 1 oz never needs more than 50% of equity at entry.
+
+If any fails, the $200 goes to demo-plus-US500 (same rules, sized at 1%) until gold is affordable at
+1% risk (about $2,100 at today's price). Even if all pass, it stays provisional until Gate 0, calibrated
+spreads and the single out-of-sample run.
+
 ### Results
 *(none yet)*
 
