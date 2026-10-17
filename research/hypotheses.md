@@ -37,7 +37,13 @@ Split by date: first 70% in-sample, last 30% out-of-sample.
 before any real money.
 
 ### Results
-*(add MT5 and Python results here as they come in)*
+**Run A1, 2026-10-17 (MT5, US500 M5, FP Markets data, 1-min OHLC, $100, in-sample from 2024-01-01)**
+- Bot mechanics verified: ~1% risk per trade ($0.83-0.96), stops -1.00R, targets +1.50R, entries at 09:50 NY, skips and kill switch working.
+- 56 trades in Jan-Mar 2024: 12 targets, 35 stops, 9 end-of-day exits. **-17.7R total, about -0.32R per trade.**
+- Kill switch tripped 2024-03-26 at -15%. Many stops within minutes of entry (false breakouts).
+- Break-even win rate at 1.5R is 40%; achieved about 21-25%.
+- Note: tester end date was set to 2025-12-31 by mistake, but no trades happened after March 2024, so the out-of-sample period is still untouched.
+- Next: Run A2, same rules, full in-sample period (2024-01-01 to 2025-08-31) with kill switch and loss limits set to 100% for measurement only. Counts as run 2 of 10.
 
 ### Decision
 *(keep / reject / park, and why)*
