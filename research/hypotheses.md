@@ -322,6 +322,13 @@ trade correlation 1.0000; net $631.25 (MT5) vs $631.70 (Python). Three trades ex
 inside the same bar (tick generation), with the same result. Gold commission of USD 3/lot/side confirmed.
 Both implementations use the broker's stored bar spreads, so the cost question of amendment 14c is still open.
 
+**Real-tick cost check — 2026-10-18.** Same settings, "Every tick based on real ticks" (FP Markets' recorded
+ticks, real spreads). 110 of 112 trades identical in timing and exit reason (2 lost to MT5 splitting the run
+while downloading ticks). Matched trades: mean +0.121R (1-minute bars) vs **+0.124R (real ticks)**; median entry
+price difference $0.01. Real ticks do show slippage through stops on news gaps (worst: −1.73R on 2024-07-05,
+a payrolls day). **For gold, real spreads do not erode the result; the amendment 14c cost question is closed for
+gold** (other markets still use the ExportSpreads calibration). The out-of-sample run uses real ticks.
+
 ### Decision
 *(keep / reject / park, and why)*
 
