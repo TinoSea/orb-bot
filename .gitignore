@@ -16,3 +16,6 @@ equity.png
 
 # Mac clutter
 .DS_Store
+
+# Exported market data (large; kept on your Mac, not in git)
+data/

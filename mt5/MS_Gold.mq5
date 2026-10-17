@@ -16,7 +16,8 @@
 //      most recent swing low.
 //    Pullback (1H): price trades back to within InpZoneATR x ATR(4H) of the level.
 //    Entry (1H): after the pullback, first 1H close beyond the previous 1H bar's
-//      extreme and beyond the level, inside the New York session window.
+//      extreme and beyond the level, inside the market's main exchange session
+//      (InpSessionZone + local times), or any time in 24/7 mode (crypto).
 //    Cancel: 4H close InpFailATR x ATR(4H) back through the level, or no entry
 //      within InpSetupExpiry 1H bars.
 //    Stop: pullback extreme +/- InpStopBufATR x ATR(1H).
@@ -26,11 +27,20 @@
 //    persistent kill switch, live-account guard, phone alerts, CSV journal.
 //
 #property copyright   "orb-bot"
-#property version     "1.00"
+#property version     "1.10"
 #property description "H-002: 4H market structure + 1H pullback entries (built for XAUUSD)."
 #property description "Hard limits: % risk per trade, daily/weekly loss caps, kill switch."
 
 #include <Trade\Trade.mqh>
+
+//--- session time zones (each market trades its own main exchange hours)
+enum SessionZone
+  {
+   ZONE_NEW_YORK  = 0,   // New York (US indices, metals, energy, US bonds, agriculture)
+   ZONE_LONDON    = 1,   // London (FTSE 100, currencies)
+   ZONE_FRANKFURT = 2,   // Frankfurt (DAX, Bund)
+   ZONE_TOKYO     = 3    // Tokyo (Nikkei)
+  };
 
 //--- inputs ---------------------------------------------------------
 input group "Structure (higher timeframe)"
@@ -47,8 +57,10 @@ input double InpStopBufATR     = 0.1;      // Stop buffer beyond the pullback ex
 input double InpMinRR          = 1.0;      // Target must be at least this many R away
 input double InpDefaultR       = 2.0;      // Target (in R) when no swing level qualifies
 input int    InpMaxHoldBars    = 120;      // Close after this many entry bars (120 x 1H = 5 days)
-input string InpSessionStartNY = "08:00";  // Entries allowed from (New York time)
-input string InpSessionEndNY   = "17:00";  // Entries allowed until (New York time)
+input SessionZone InpSessionZone = ZONE_NEW_YORK; // Time zone of the session times below
+input string InpSessionStart   = "08:00";  // Entries allowed from (local time of that zone)
+input string InpSessionEnd     = "17:00";  // Entries allowed until (local time of that zone)
+input bool   InpMode24x7       = false;    // Crypto mode: entries any time incl. weekends, no Friday close
 input bool   InpCloseFriday    = true;     // Close everything on Friday afternoon (no weekend gaps)
 input string InpFridayCloseNY  = "16:30";  // Friday close time (New York)
 input bool   InpAllowLong      = true;     // Allow long trades
@@ -218,17 +230,56 @@ void NewDay(const datetime nyNow)
    g_dayBlocked   = false;
   }
 
+// Last Sunday of a month (00:00 of that day)
+datetime LastSunday(const int year, const int mon)
+  {
+   MqlDateTime s;
+   ZeroMemory(s);
+   s.year = year;
+   s.mon  = mon;
+   s.day  = 31;                       // only used for March and October
+   datetime d = StructToTime(s);
+   MqlDateTime f;
+   TimeToStruct(d, f);
+   return (datetime)((long)d - (long)f.day_of_week * 86400);
+  }
+
+// EU/UK summer time: last Sunday of March 01:00 UTC -> last Sunday of October 01:00 UTC
+bool IsEUDST(const datetime gmt)
+  {
+   MqlDateTime s;
+   TimeToStruct(gmt, s);
+   long start = (long)LastSunday(s.year, 3) + 3600;
+   long end   = (long)LastSunday(s.year, 10) + 3600;
+   return ((long)gmt >= start && (long)gmt < end);
+  }
+
+// Local time of the session zone, from New York time
+datetime ZoneTime(const datetime nyNow)
+  {
+   if(InpSessionZone == ZONE_NEW_YORK)
+      return nyNow;
+   long approxGmt = (long)nyNow + 5 * 3600;
+   long gmt = (long)nyNow + (IsUSDST((datetime)approxGmt) ? 4 : 5) * 3600;
+   if(InpSessionZone == ZONE_LONDON)
+      return (datetime)(gmt + (IsEUDST((datetime)gmt) ? 3600 : 0));
+   if(InpSessionZone == ZONE_FRANKFURT)
+      return (datetime)(gmt + (IsEUDST((datetime)gmt) ? 7200 : 3600));
+   return (datetime)(gmt + 9 * 3600);                    // Tokyo, no summer time
+  }
+
 bool InSession(const datetime nyNow)
   {
-   int dow = DayOfWeek(nyNow);
+   if(InpMode24x7)
+      return true;
+   if(InpCloseFriday && DayOfWeek(nyNow) == 5 && MinuteOfDay(nyNow) >= g_friClose)
+      return false;
+   datetime local = ZoneTime(nyNow);
+   int dow = DayOfWeek(local);
    if(dow < 1 || dow > 5)
       return false;
-   int m = MinuteOfDay(nyNow);
-   if(m < g_sessStart || m >= g_sessEnd)
-      return false;
-   if(InpCloseFriday && dow == 5 && m >= g_friClose)
-      return false;
-   return true;
+   int m = MinuteOfDay(local);
+   return (m >= g_sessStart && m < g_sessEnd);
   }
 
 //+------------------------------------------------------------------+
@@ -839,8 +890,9 @@ void ReportSymbol()
    double riskMoney = AccountInfoDouble(ACCOUNT_BALANCE) * InpRiskPercent / 100.0;
    PrintFormat("MS bot on %s | contract size %.2f | min lot %.2f, step %.2f | %.4f per point per lot | %.4f per point at min lot",
                _Symbol, contract, minLot, step, vpp, vpp * minLot);
-   PrintFormat("Clock: server is %d h ahead of New York. Entries %s-%s NY, structure %s, entries %s.",
-               g_offsetHrs, InpSessionStartNY, InpSessionEndNY,
+   PrintFormat("Clock: server is %d h ahead of New York. Entries %s-%s local time (%s%s), structure %s, entries %s.",
+               g_offsetHrs, InpSessionStart, InpSessionEnd, EnumToString(InpSessionZone),
+               InpMode24x7 ? ", 24/7 mode" : "",
                EnumToString(InpStructTF), EnumToString(InpEntryTF));
    double atrE = ATRValue(g_atrEntry);
    if(atrE > 0)
@@ -880,8 +932,8 @@ int OnInit()
       Print("The structure timeframe must be higher than the entry timeframe.");
       return INIT_PARAMETERS_INCORRECT;
      }
-   g_sessStart = ParseHHMM(InpSessionStartNY);
-   g_sessEnd   = ParseHHMM(InpSessionEndNY);
+   g_sessStart = ParseHHMM(InpSessionStart);
+   g_sessEnd   = ParseHHMM(InpSessionEnd);
    g_friClose  = ParseHHMM(InpFridayCloseNY);
    if(g_sessStart < 0 || g_sessEnd < 0 || g_friClose < 0 || g_sessEnd <= g_sessStart)
      {
@@ -960,7 +1012,7 @@ void OnTick()
    int dow    = DayOfWeek(nyNow);
 
    // 1. Friday close - no positions held over the weekend
-   if(InpCloseFriday && dow == 5 && nowMin >= g_friClose && MyPositions() > 0)
+   if(InpCloseFriday && !InpMode24x7 && dow == 5 && nowMin >= g_friClose && MyPositions() > 0)
       CloseAll("Friday close");
 
    // 2. Kill switch
@@ -971,7 +1023,7 @@ void OnTick()
      }
 
    // 3. End-of-session summary (weekdays)
-   if(InpDailySummary && !g_summarySent && nowMin >= g_sessEnd && dow >= 1 && dow <= 5)
+   if(InpDailySummary && !g_summarySent && nowMin >= 17 * 60 && dow >= 1 && dow <= 5)
      {
       double dayPnl, weekPnl;
       int    dayTrades, weekTrades;

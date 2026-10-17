@@ -8,6 +8,28 @@
 Both share the same safety system: % risk sizing, daily/weekly loss limits, kill switch,
 refuses real-money accounts unless `AllowLive` is on, phone alerts and a CSV journal.
 
+## H-002 step 1: export the raw data (ExportData script, ~10–30 minutes)
+
+1. **Allow full history:** MT5 → **Tools → Options → Charts → Max bars in chart → Unlimited** → OK, then quit and reopen MT5.
+2. **Install the script:** MetaEditor → **File → New → Script** (not Expert Advisor) → name **ExportData** → Next/Finish →
+   select all, delete, paste `mt5/ExportData.mq5` → **Compile**.
+3. **Run it:** in MT5's **Navigator → Scripts**, drag **ExportData** onto any chart → keep the defaults → OK.
+   Leave MT5 alone until the "Export finished" alert appears.
+4. **Collect the files:** in Finder press **Cmd + Shift + G** and paste:
+   ```
+   ~/Library/Application Support/net.metaquotes.wine.metatrader5/drive_c/Program Files/MetaTrader 5/MQL5/Files/orb_export
+   ```
+   Right-click the `orb_export` folder → **Compress** → attach the zip to the chat
+   (expect very roughly 50–150 MB zipped; if it's too large, send `specs.csv`, `all_symbols.csv`,
+   `export_log.txt` and `XAUUSD_M1.csv` first).
+
+## H-002 step 2: Gate 0 — MT5 vs Python on gold
+
+1. Delete any old `MS_journal.csv` in `…/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/`.
+2. Run the MS_Gold in-sample test below with **Modelling: 1 minute OHLC**.
+3. Attach the new `MS_journal.csv`. Claude runs `research/compare_trades.py` against the Python replica.
+   Pass = ≥95% of trades identical. No result is interpreted until this passes.
+
 ## H-002 quick start: MS_Gold
 
 1. **Install:** MetaEditor → File → New → Expert Advisor → name it **MS_Gold** → Next/Finish →
@@ -23,7 +45,7 @@ refuses real-money accounts unless `AllowLive` is on, phone alerts and a CSV jou
 | Date | **2023.01.01 → 2025.06.30** (do NOT go past June 2025 yet) |
 | Modelling | 1 minute OHLC |
 | Deposit / Leverage | **5000 USD**, 1:20 (research size so 1% risk is possible on gold) |
-| Inputs | `InpKillSwitchPct`, `InpDailyLossPct`, `InpWeeklyLossPct` = **100** (measurement only) |
+| Inputs | `InpKillSwitchPct`, `InpDailyLossPct`, `InpWeeklyLossPct` = **100** (measurement only). Session: zone **NEW_YORK**, **08:00–17:00** (other markets: use the zone and hours in `research/h002_markets.csv`; BTC: `InpMode24x7` = true) |
 
 4. Send Claude the **Backtest** tab and the **Journal** (select all → copy → paste into a text file).
 

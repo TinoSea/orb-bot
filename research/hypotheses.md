@@ -104,6 +104,82 @@ $1,500–2,500 first, or the strategy runs on US500 (which can be sized to $1 ri
 
 **If it passes:** 6–8 weeks demo trading, then decide on account size.
 
+### Deepening protocol — pre-registered 2026-10-17, before any H-002 data exists
+
+This amends H-002 from "does it work on gold?" to "does it work, beyond luck and beyond simple
+trend exposure, across independent markets?". Everything below is fixed before any results.
+
+**1. Universe (fixed).** The 17 markets in `research/h002_markets.csv`, in 8 sectors: US equity
+(US500, US100, US30, US2000), non-US equity (UK100, GER40, JP225), rates (US 10Y or Bund), FX
+(EURUSD, USDJPY, GBPUSD, AUDUSD), metals (gold, silver), energy (WTI), crypto (BTC), agriculture
+(first available). Markets the broker doesn't offer are recorded as missing, never substituted after
+seeing results. Losing markets are never dropped after the fact.
+
+**2. One rule set.** Identical parameters everywhere. The only per-market differences, fixed in the
+CSV now: the market's main exchange session (local time zone) and 24/7 mode for BTC.
+
+**3. Raw data.** FP Markets 5-minute bars with spread for all markets and 1-minute bars for gold
+(`mt5/ExportData.mq5`), Dec 2022 → Oct 2026, plus contract terms (`specs.csv`) recorded in
+`research/contracts.md`. **Independent source:** Dukascopy historical data for gold and EURUSD
+(minimum), used to repeat the gold and EURUSD in-sample runs.
+
+**4. Gate 0 — implementation check (must pass before any result is interpreted).** The MT5 tester
+and the independent Python replica (`research/ms_replica.py`) on gold, in-sample, 1-minute bars:
+≥95% of trades match on entry minute and direction, median entry difference ≤2 ticks
+(`research/compare_trades.py`). Replica already verified: exact match to the EA's swing logic,
+a hand-built scenario, and zero expectancy on 40 random markets (no look-ahead bias).
+
+**5. Costs.** Per-bar broker spreads from the export; swaps from contract terms; commission from
+FP Markets' Raw schedule (to be filled in `contracts.md` before running). Sensitivity: spreads × 2.
+**Cost filter (set now):** a market is excluded if its median spread at entry is more than 10% of
+its median stop distance, measured on in-sample data before looking at strategy results.
+
+**6. Periods.** In-sample 2023-01-01 → 2025-06-30. Out-of-sample 2025-07-01 → 2026-10-16, run
+**once**, with code and settings frozen in git (commit hash recorded here before the run).
+Stability: results reported per half-year within in-sample.
+
+**7. Baselines (same markets, periods, costs).**
+- **B1 Random entries:** for each market, the same number of trades at random in-session 1H bar
+  opens, random direction, stop distances drawn from the strategy's own stops (in ATR units), same
+  target rule, max hold and Friday close. 1,000 runs.
+- **B2 Simple trend rule:** at each new 4H bar, if flat and the daily close is above its 50-day
+  average, buy at the next in-session 1H bar (mirror for shorts); stop 1.5 × ATR(1H); target 2R;
+  same max hold and Friday close.
+- **B3 Buy-and-hold** of each market (context only).
+
+**8. Ablations (does each ingredient earn its place?).** A1 without the higher-low/lower-high
+condition, A2 without the pullback requirement, A3 without the session filter. Reported, not used
+to change the rules.
+
+**9. Robustness variants.** R1 swing size 3, R2 zone 0.2 × ATR, R3 zone 0.5 × ATR,
+R4 pessimistic intrabar order, R5 spreads × 2.
+
+**10. Statistics.** Trade-level bootstrap (10,000 resamples) 95% confidence intervals for
+expectancy per market, per sector and for the portfolio; month-block bootstrap for the portfolio.
+Deflated Sharpe ratio using the number of variants logged in `research/h002_runs.csv`.
+Regime split per market-day: "trending" if |60-day return| > 60-day daily volatility × √60,
+otherwise "ranging".
+
+**11. Portfolio rules.** Equal risk budget per sector, split equally within a sector. Max 3% total
+open risk. Max 2 same-direction positions per sector. Markets whose 60-day daily-return correlation
+exceeds 0.7 count as the same bet for that limit. Report the effective number of independent bets
+(from the eigenvalues of the correlation matrix of daily strategy returns).
+
+**12. Decision rule (portfolio, out-of-sample).** All of: profit factor ≥ 1.2; expectancy ≥ +0.15R
+with the bootstrap 95% lower bound > 0; beats the 95th percentile of B1; beats B2's expectancy
+(bootstrap difference lower bound > 0); profit factor ≥ 1.0 in at least 4 of the sectors with data;
+max drawdown ≤ 20%. Gold keeps its own original criteria above.
+
+**13. Demo kill criterion.** From 10,000 reshuffles of the out-of-sample trades: stop demo trading
+if the drawdown in R exceeds the simulated 95th percentile for that number of trades, or if after
+30 trades expectancy is below the simulated 5th percentile.
+
+**14. Variant budget.** Every run is logged automatically in `research/h002_runs.csv`. At most 15
+distinct variants (V0 registered + A1–A3 + R1–R5 + up to 6 others), baselines excluded.
+
+**15. Separate question: tradable at $100?** From `contracts.md`, list which markets can be sized
+to 1% risk on $100. This never affects the research verdict.
+
 ### Results
 *(none yet)*
 
