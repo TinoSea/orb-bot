@@ -85,6 +85,31 @@ The bot refuses to run on a real-money account unless `AllowLive` is set to true
 - If the Mac does sleep mid-trade, the **stop and target are held by the broker**, so your risk stays capped.
   Only the end-of-day close needs the Mac.
 
+### Phone alerts (one-time setup, 2 minutes)
+
+The bot messages the **MetaTrader 5 app on your phone**, so you don't need to watch the chart.
+
+1. On your phone, install **MetaTrader 5** (App Store / Play Store) and open it.
+2. Find your **MetaQuotes ID**: Settings → Messages (iPhone) or Menu → Messages (Android). It's a short code like `1A2B3C4D`.
+3. In **desktop** MT5: **Tools → Options → Notifications** (on Mac this may be under the *MetaTrader 5* menu → *Settings*).
+   Tick **Enable Push Notifications**, paste your MetaQuotes ID, and click **Test**. Your phone should buzz.
+4. Done. Alerts arrive while desktop MT5 is open and the bot is running. (None are sent during backtests.)
+
+What you'll get:
+
+| When | Example message |
+|---|---|
+| Bot starts | `Bot started on a demo account. Risk 1.00% = 1.00 per trade.` |
+| Range is set | `Range set 7650.25 - 7662.50 (12.25 pts). Watching for a breakout until 11:30 NY.` |
+| Day skipped | `No trade today - skipped: range too wide (34.50 pts)` |
+| Trade entered | `ENTERED LONG 0.10 @ 7665.20 \| stop 7650.25 \| target 7687.60 \| risk 1.00` |
+| Trade closed | `TARGET hit: +1.48R (+1.48). Plan followed.` or `STOPPED out: -1.02R (-1.02). Plan followed - a good trade, even as a loss.` |
+| No breakout | `No breakout by 11:30 NY. No trade today - that's the plan working.` |
+| Limits | `Daily loss limit reached…`, `KILL SWITCH: …` |
+| End of day | `Day done: 1 trade(s), +1.48 today \| week +2.10 over 3 trade(s) \| balance 102.10` |
+
+If you ever close a trade by hand, you'll get `Closed MANUALLY … Note it in your weekly review.` That's deliberate.
+
 ## 5. Settings (Inputs tab)
 
 | Input | Default | Meaning |
@@ -101,6 +126,8 @@ The bot refuses to run on a real-money account unless `AllowLive` is set to true
 | ResetKillSwitch | false | Set true once to clear a tripped kill switch |
 | AllowLive | false | Must be true to run on real money |
 | ServerMinusNY | 7 | FP Markets' server clock is 7 hours ahead of New York |
+| PushNotify | true | Send alerts to the MetaTrader app on your phone |
+| DailySummary | true | Send an end-of-day summary on weekdays |
 
 **Don't loosen the risk settings to make results look better.** That's how overfitting starts.
 

@@ -19,7 +19,7 @@
 //    - refuses to run on a LIVE account unless you explicitly allow it
 //
 #property copyright   "orb-bot"
-#property version     "1.00"
+#property version     "1.10"
 #property description "Opening-range breakout on US500 (S&P 500 CFD)."
 #property description "Hard limits: % risk per trade, daily/weekly loss caps, kill switch."
 
@@ -54,6 +54,8 @@ input bool   InpAutoDetectClock = true;    // Live/demo only: detect from the br
 input group "Other"
 input long   InpMagic           = 202610;  // Magic number (identifies this bot's trades)
 input bool   InpWriteJournal    = true;    // Write every fill to MQL5/Files/ORB_journal.csv
+input bool   InpPushNotify      = true;    // Send alerts to the MetaTrader app on your phone
+input bool   InpDailySummary    = true;    // Send a short end-of-day summary on weekdays
 
 //--- state ----------------------------------------------------------
 CTrade   trade;
@@ -74,6 +76,29 @@ string   g_gvPeak       = "";
 string   g_gvKill       = "";
 bool     g_killLogged   = false;
 string   g_status       = "";
+double   g_entryRisk    = 0.0;     // money at risk on the open trade (for R-multiples)
+bool     g_summarySent  = false;
+bool     g_cutoffSent   = false;
+bool     g_failSent     = false;
+
+//+------------------------------------------------------------------+
+//| Phone alerts                                                      |
+//+------------------------------------------------------------------+
+// Prints to the Experts log and, when enabled, pushes to the MetaTrader
+// app on your phone (Tools > Options > Notifications > MetaQuotes ID).
+void Notify(const string msg)
+  {
+   Print(msg);
+   if(!InpPushNotify || MQLInfoInteger(MQL_TESTER) || MQLInfoInteger(MQL_OPTIMIZATION))
+      return;
+   if(!TerminalInfoInteger(TERMINAL_NOTIFICATIONS_ENABLED))
+      return;
+   string text = "ORB " + _Symbol + ": " + msg;
+   if(StringLen(text) > 255)
+      text = StringSubstr(text, 0, 255);
+   if(!SendNotification(text))
+      PrintFormat("Phone alert not sent (error %d)", GetLastError());
+  }
 
 //+------------------------------------------------------------------+
 //| Time helpers                                                      |
@@ -165,8 +190,11 @@ void NewDay(const datetime nyNow)
    g_daySkip    = false;
    g_orHigh     = 0.0;
    g_orLow      = 0.0;
-   g_killLogged = false;
-   g_status     = "waiting for 09:30 New York";
+   g_killLogged  = false;
+   g_summarySent = false;
+   g_cutoffSent  = false;
+   g_failSent    = false;
+   g_status      = "waiting for 09:30 New York";
   }
 
 //+------------------------------------------------------------------+
@@ -297,9 +325,9 @@ bool KillSwitch()
      {
       GlobalVariableSet(g_gvKill, 1.0);
       CloseAll("kill switch");
-      string msg = StringFormat("ORB KILL SWITCH: equity %.2f is %.1f%% below peak %.2f. Bot stopped.",
+      string msg = StringFormat("KILL SWITCH: equity %.2f is %.1f%% below peak %.2f. Bot stopped until you review and reset it.",
                                 eq, 100.0 * (1.0 - eq / peak), peak);
-      Print(msg);
+      Notify(msg);
       if(!MQLInfoInteger(MQL_TESTER))
          Alert(msg);
       g_killLogged = true;
@@ -318,7 +346,7 @@ bool LossLimitHit()
    ClosedStats(g_dayStartSrv, dayPnl, e);
    if(dayPnl + fl <= -bal * InpDailyLossPct / 100.0)
      {
-      PrintFormat("Daily loss limit reached (%.2f). No more trades today.", dayPnl + fl);
+      Notify(StringFormat("Daily loss limit reached (%.2f). No more trades today.", dayPnl + fl));
       g_status = "daily loss limit - done for today";
       g_daySkip = true;
       return true;
@@ -326,7 +354,7 @@ bool LossLimitHit()
    ClosedStats(g_weekStartSrv, weekPnl, e);
    if(weekPnl + fl <= -bal * InpWeeklyLossPct / 100.0)
      {
-      PrintFormat("Weekly loss limit reached (%.2f). No more trades this week.", weekPnl + fl);
+      Notify(StringFormat("Weekly loss limit reached (%.2f). No more trades this week.", weekPnl + fl));
       g_status = "weekly loss limit - done for the week";
       g_daySkip = true;
       return true;
@@ -381,7 +409,8 @@ bool BuildOR()
       g_status = StringFormat("skipped: range too wide (%.2f pts)", range);
       return false;
      }
-   PrintFormat("Opening range: high %.2f  low %.2f  (%.2f pts)", hi, lo, range);
+   Notify(StringFormat("Range set %.2f - %.2f (%.2f pts). Watching for a breakout until %s NY.",
+                       lo, hi, range, InpLastEntryNY));
    g_status = StringFormat("range %.2f - %.2f, waiting for breakout", lo, hi);
    return true;
   }
@@ -434,7 +463,7 @@ void TryEnter(const int side)
    double stopsLevel = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
    if(riskPts < stopsLevel)
      {
-      PrintFormat("Skipping today: stop distance %.2f is inside the broker's minimum %.2f", riskPts, stopsLevel);
+      Notify(StringFormat("No trade today: stop distance %.2f is inside the broker's minimum %.2f", riskPts, stopsLevel));
       g_status  = "skipped: stop too close for broker";
       g_daySkip = true;
       return;
@@ -445,8 +474,8 @@ void TryEnter(const int side)
    lots = MathMin(lots, maxLot);
    if(lots < minLot - 1e-9)
      {
-      PrintFormat("Skipping today: the smallest trade (%.2f lots) would risk %.2f, above your %.2f%% limit (%.2f).",
-                  minLot, minLot * riskPts * vpp, InpRiskPercent, riskMoney);
+      Notify(StringFormat("No trade today: the smallest trade (%.2f lots) would risk %.2f, above your %.2f%% limit (%.2f).",
+                          minLot, minLot * riskPts * vpp, InpRiskPercent, riskMoney));
       g_status  = "skipped: risk too big for limits";
       g_daySkip = true;
       return;
@@ -462,12 +491,23 @@ void TryEnter(const int side)
    uint rc = trade.ResultRetcode();
    if(ok && (rc == TRADE_RETCODE_DONE || rc == TRADE_RETCODE_PLACED))
      {
-      PrintFormat("ENTERED %s %.2f lots @ %.2f  stop %.2f  target %.2f  risk about %.2f",
-                  (side > 0) ? "LONG" : "SHORT", lots, trade.ResultPrice(), sl, tp, lots * riskPts * vpp);
+      g_entryRisk = lots * riskPts * vpp;
+      Notify(StringFormat("ENTERED %s %.2f lots @ %.2f | stop %.2f | target %.2f | risk %.2f",
+                          (side > 0) ? "LONG" : "SHORT", lots, trade.ResultPrice(), sl, tp, g_entryRisk));
       g_status = StringFormat("in trade: %s %.2f lots", (side > 0) ? "LONG" : "SHORT", lots);
      }
    else
-      PrintFormat("Entry FAILED: %u %s", rc, trade.ResultRetcodeDescription());
+     {
+      string fm = StringFormat("Entry FAILED: %u %s. Will retry on the next bar if the signal is still valid.",
+                               rc, trade.ResultRetcodeDescription());
+      if(g_failSent)
+         Print(fm);
+      else
+        {
+         Notify(fm);
+         g_failSent = true;
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -504,11 +544,53 @@ bool PositionIsOurs(const long pid)
    return false;
   }
 
+// Phone alert when a trade closes: result in R and $, and a reminder that a
+// stop that followed the plan is still a good trade.
+void NotifyExit(const long pid, const long reason)
+  {
+   double total = 0.0;
+   if(HistorySelectByPosition(pid))
+      for(int i = 0; i < HistoryDealsTotal(); i++)
+        {
+         ulong d = HistoryDealGetTicket(i);
+         if(d != 0)
+            total += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_COMMISSION)
+                     + HistoryDealGetDouble(d, DEAL_SWAP);
+        }
+   string rText = (g_entryRisk > 0) ? StringFormat("%+.2fR (%+.2f)", total / g_entryRisk, total)
+                                    : StringFormat("%+.2f", total);
+   string head, tail;
+   if(reason == DEAL_REASON_TP)
+     {
+      head = "TARGET hit";
+      tail = "Plan followed.";
+     }
+   else
+      if(reason == DEAL_REASON_SL)
+        {
+         head = "STOPPED out";
+         tail = "Plan followed - a good trade, even as a loss.";
+        }
+      else
+         if(reason == DEAL_REASON_EXPERT)
+           {
+            head = "Closed by the bot (end of day or safety rule)";
+            tail = "";
+           }
+         else
+           {
+            head = "Closed MANUALLY";
+            tail = "Note it in your weekly review.";
+           }
+   Notify(StringFormat("%s: %s. %s", head, rText, tail));
+   g_entryRisk = 0.0;
+  }
+
 void OnTradeTransaction(const MqlTradeTransaction &trans,
                         const MqlTradeRequest &request,
                         const MqlTradeResult &result)
   {
-   if(!InpWriteJournal || trans.type != TRADE_TRANSACTION_DEAL_ADD)
+   if(trans.type != TRADE_TRANSACTION_DEAL_ADD)
       return;
    ulong d = trans.deal;
    if(!HistoryDealSelect(d))
@@ -529,6 +611,11 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
    if(magic != InpMagic && !PositionIsOurs(pid))
       return;
 
+   if(entry == DEAL_ENTRY_OUT || entry == DEAL_ENTRY_OUT_BY)
+      NotifyExit(pid, reason);
+
+   if(!InpWriteJournal)
+      return;
    int h = FileOpen("ORB_journal.csv", FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ, ',');
    if(h == INVALID_HANDLE)
       return;
@@ -631,6 +718,11 @@ int OnInit()
 
    UpdateClock();
    ReportSymbol();
+   if(InpPushNotify && !MQLInfoInteger(MQL_TESTER) && !TerminalInfoInteger(TERMINAL_NOTIFICATIONS_ENABLED))
+      Print("Phone alerts are OFF in MT5. Turn them on: Tools > Options > Notifications, enter your MetaQuotes ID.");
+   Notify(StringFormat("Bot started on a %s account. Risk %.2f%% = %.2f per trade.",
+                       isReal ? "REAL" : "demo", InpRiskPercent,
+                       AccountInfoDouble(ACCOUNT_BALANCE) * InpRiskPercent / 100.0));
    g_status = "starting";
    ShowStatus();
    return INIT_SUCCEEDED;
@@ -657,6 +749,23 @@ void OnTick()
      {
       CloseAll("end-of-day exit");
       g_status = "flat for the day";
+     }
+
+   // 1b. End-of-day summary to the phone (weekdays only)
+   if(InpDailySummary && !g_summarySent && nowMin >= g_flatMin && MyPositions() == 0)
+     {
+      MqlDateTime s;
+      TimeToStruct(nyNow, s);
+      if(s.day_of_week >= 1 && s.day_of_week <= 5)
+        {
+         double dayPnl, weekPnl;
+         int    dayTrades, weekTrades;
+         ClosedStats(g_dayStartSrv, dayPnl, dayTrades);
+         ClosedStats(g_weekStartSrv, weekPnl, weekTrades);
+         Notify(StringFormat("Day done: %d trade(s), %+.2f today | week %+.2f over %d trade(s) | balance %.2f",
+                             dayTrades, dayPnl, weekPnl, weekTrades, AccountInfoDouble(ACCOUNT_BALANCE)));
+        }
+      g_summarySent = true;
      }
 
    // 2. Kill switch
@@ -694,7 +803,14 @@ void OnTick()
    if(barMin < g_orEndMin || barMin >= g_lastEntryMin)
      {
       if(barMin >= g_lastEntryMin && MyPositions() == 0 && g_orReady && StringFind(g_status, "range") == 0)
+        {
          g_status = "no breakout before cut-off - done for today";
+         if(!g_cutoffSent)
+           {
+            Notify(StringFormat("No breakout by %s NY. No trade today - that's the plan working.", InpLastEntryNY));
+            g_cutoffSent = true;
+           }
+        }
       ShowStatus();
       return;
      }
@@ -705,7 +821,7 @@ void OnTick()
       if(!BuildOR())
         {
          g_daySkip = true;
-         PrintFormat("Today %s", g_status);
+         Notify("No trade today - " + g_status);
          ShowStatus();
          return;
         }
