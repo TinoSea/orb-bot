@@ -53,10 +53,10 @@ This script reads the real first ticks at the start of every hour for the last 9
 | Expert | MS_Gold |
 | Symbol | **XAUUSD.r** (FP Markets' gold) |
 | Timeframe | **H1** |
-| Date | **2023.01.01 → 2025.06.30** (do NOT go past June 2025 yet) |
+| Date | **Custom period: 2023.01.01 → 2025.06.30** (the EA also stops itself at 2025.07.01) |
 | Modelling | 1 minute OHLC |
 | Deposit / Leverage | **5000 USD**, 1:20 (research size so 1% risk is possible on gold) |
-| Inputs | `InpKillSwitchPct`, `InpDailyLossPct`, `InpWeeklyLossPct` = **100** (measurement only). Session: zone **NEW_YORK**, **08:00–17:00** (other markets: use the zone and hours in `research/h002_markets.csv`; BTC: NEW_YORK 00:00–24:00, `InpMode24x7` = false, because FP Markets' BTC is closed at weekends) |
+| Inputs | **Leave all defaults** (v1.11). In the tester it automatically ignores the loss limits and kill switch, and stops at 2025.07.01 (out-of-sample lock). `InpRiskPercent` must stay **1.0**. Session: zone **NEW_YORK**, **08:00–17:00** (other markets: use the zone and hours in `research/h002_markets.csv`; BTC: NEW_YORK 00:00–24:00, `InpMode24x7` = false, because FP Markets' BTC is closed at weekends) |
 
 4. Send Claude the **Backtest** tab and the **Journal** (select all → copy → paste into a text file).
 

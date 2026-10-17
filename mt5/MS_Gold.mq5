@@ -27,7 +27,7 @@
 //    persistent kill switch, live-account guard, phone alerts, CSV journal.
 //
 #property copyright   "orb-bot"
-#property version     "1.10"
+#property version     "1.11"
 #property description "H-002: 4H market structure + 1H pullback entries (built for XAUUSD)."
 #property description "Hard limits: % risk per trade, daily/weekly loss caps, kill switch."
 
@@ -75,6 +75,10 @@ input double InpMaxSpreadFrac   = 0.15;    // Skip entry if spread is more than 
 input bool   InpResetKillSwitch = false;   // Set true ONCE to clear a tripped kill switch
 input bool   InpAllowLive       = false;   // Must be true to run on a real-money account
 
+input group "Research (Strategy Tester only - ignored on demo/live)"
+input bool     InpTesterNoLimits = true;                 // Tester: ignore loss limits + kill switch (measure the strategy)
+input datetime InpTesterStopAt   = D'2025.07.01 00:00';  // Tester: stop here (out-of-sample lock). 1970.01.01 = off, for the ONE out-of-sample run
+
 input group "Clock"
 input int    InpServerMinusNY   = 7;       // Server time minus New York time, hours (FP Markets = 7)
 input bool   InpAutoDetectClock = true;    // Live/demo only: detect from the broker clock
@@ -107,6 +111,10 @@ string   g_gvKill        = "";
 bool     g_killLogged    = false;
 bool     g_summarySent   = false;
 bool     g_dayBlocked    = false;
+double   g_limDaily      = 2.0;    // effective limits (research mode in the tester sets 100)
+double   g_limWeekly     = 5.0;
+double   g_limKill       = 15.0;
+bool     g_lockDone      = false;
 string   g_status        = "";
 double   g_entryRisk     = 0.0;
 int      g_atrStruct     = INVALID_HANDLE;
@@ -421,7 +429,7 @@ bool KillSwitch()
       GlobalVariableSet(g_gvPeak, eq);
       return false;
      }
-   if(peak > 0 && eq <= peak * (1.0 - InpKillSwitchPct / 100.0))
+   if(peak > 0 && eq <= peak * (1.0 - g_limKill / 100.0))
      {
       GlobalVariableSet(g_gvKill, 1.0);
       CloseAll("kill switch");
@@ -447,14 +455,14 @@ bool LossLimitHit()
    double dayPnl, weekPnl;
    int    e;
    ClosedStats(g_dayStartSrv, dayPnl, e);
-   if(dayPnl + fl <= -bal * InpDailyLossPct / 100.0)
+   if(dayPnl + fl <= -bal * g_limDaily / 100.0)
      {
       Notify(StringFormat("Daily loss limit reached (%.2f). No more trades today.", dayPnl + fl));
       g_dayBlocked = true;
       return true;
      }
    ClosedStats(g_weekStartSrv, weekPnl, e);
-   if(weekPnl + fl <= -bal * InpWeeklyLossPct / 100.0)
+   if(weekPnl + fl <= -bal * g_limWeekly / 100.0)
      {
       Notify(StringFormat("Weekly loss limit reached (%.2f). No more trades this week.", weekPnl + fl));
       g_dayBlocked = true;
@@ -922,6 +930,20 @@ void ShowStatus()
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   if(InpRiskPercent <= 0.0 || InpRiskPercent > 3.0)
+     {
+      Print(StringFormat("RiskPercent = %.2f looks wrong (allowed 0.01-3). Did you mean to change a loss limit instead?",
+                         InpRiskPercent));
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   bool research = MQLInfoInteger(MQL_TESTER) && InpTesterNoLimits;
+   g_limDaily  = research ? 100.0 : InpDailyLossPct;
+   g_limWeekly = research ? 100.0 : InpWeeklyLossPct;
+   g_limKill   = research ? 100.0 : InpKillSwitchPct;
+   if(research)
+      Print("Research mode (tester): loss limits and kill switch off, to measure the strategy itself.");
+   if(MQLInfoInteger(MQL_TESTER) && InpTesterStopAt > 0)
+      Print("Out-of-sample lock: the test stops at " + TimeToString(InpTesterStopAt) + " server time.");
    if(InpSwingN < 1 || InpSwingLookback < 50)
      {
       Print("Swing size must be at least 1 and lookback at least 50 bars.");
@@ -1001,6 +1023,19 @@ void OnDeinit(const int reason)
 
 void OnTick()
   {
+   if(MQLInfoInteger(MQL_TESTER) && InpTesterStopAt > 0 && TimeCurrent() >= InpTesterStopAt)
+     {
+      if(!g_lockDone)
+        {
+         if(MyPositions() > 0)
+            CloseAll("end of in-sample");
+         Print("OUT-OF-SAMPLE LOCK: test stopped at " + TimeToString(TimeCurrent()) +
+               ". Nothing after this date is used until the single out-of-sample run.");
+         g_lockDone = true;
+         TesterStop();
+        }
+      return;
+     }
    datetime nyNow = ToNY(TimeCurrent());
    if(DayKey(nyNow) != g_dayKey)
      {
