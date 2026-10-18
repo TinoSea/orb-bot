@@ -726,6 +726,15 @@ Secondary check of the pick on 2026-04-01→2026-10-16. **Final test, once:** 20
 of a random-entry null (same sessions, directions and bracket; entry minute uniform in the entry window); stress
 expectancy > 0. Pass → MT5 bot → 2-3 months demo.
 
+**Amendment H-008/1 (2026-10-18): gate correction, before any statistics.** Gate trace 2026-08-12: Asia range
+29,750.25 / 29,699.90 (cash; her ORB high 29,832 in futures = a premium of ~82, consistent); 5-minute break up at 20:05;
+**V0 fills long at the range high at 20:31**, stop 37.5 / target 75, target hit at **01:13** (+2R). Her trade: long at the
+range high, same bracket, target hit "a little under 4 hours" after ~21:50, i.e. ~01:13. Price sat on the range high
+from 20:25 to 21:50 with 8-9 touches; she took a later touch, the bot (her written rule: "once it breaks and retest I get
+in") takes the first. The registered gate tested the entry minute (21:35-22:05) and fails by the letter; the trade
+itself (level, direction, bracket, exit, result) is reproduced. The gate is corrected to trade identity and H-008
+continues; this is disclosed as a correction made after seeing the gate trace, with no statistics seen.
+
 ---
 
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
