@@ -735,6 +735,16 @@ in") takes the first. The registered gate tested the entry minute (21:35-22:05) 
 itself (level, direction, bracket, exit, result) is reproduced. The gate is corrected to trade identity and H-008
 continues; this is disclosed as a correction made after seeing the gate trace, with no statistics seen.
 
+### Results (2026-10-18)
+**Development (2025-07-01→2026-03-31), after futures costs:** V0 Asia 37.5/75: 174 trades, win 37%, +0.11R (PF 1.17);
+V1 NY 37.5/75: 161, 36%, +0.03R (1.04); V2 Asia range-stop 2R: 169, 38%, +0.13R (1.21); **V3 NY range-stop 2R: 130, 48%,
++0.14R (1.29) → pick.** All 95% ranges include zero.
+**Secondary check (2026-04-01→2026-10-16), V3:** 72 trades, win 40%, **−0.11R** (PF 0.81), 22nd percentile vs random,
+stress −0.12R. Descriptive only (does not change the final variant): her own rule V0 on the same period: 128 trades,
+win 32%, −0.05R (PF 0.92), 33rd percentile vs random.
+**Status:** the registered final test (V3, once, 2023-01→2025-06) still needs the 2023-2025 export; given the secondary
+result a pass is unlikely. No MT5 bot unless the final test passes.
+
 ---
 
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour

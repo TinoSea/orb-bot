@@ -1,0 +1,40 @@
+{
+ "trades": 128,
+ "win_rate": 0.3203125,
+ "gross_R": -0.0390625,
+ "fut_R": -0.05406249999999985,
+ "fut_PF": 0.9216352414925542,
+ "fut_R_ci95": [
+  -0.2884374999999999,
+  0.18031250000000015
+ ],
+ "longs": 70,
+ "shorts": 58,
+ "exits": {
+  "stop": 87,
+  "target": 41
+ },
+ "median_risk": 37.5,
+ "stress": {
+  "trades": 128,
+  "win_rate": 0.3203125,
+  "gross_R": -0.057187499999999905,
+  "fut_R": -0.08718750000000003,
+  "fut_PF": 0.8786032851082342,
+  "fut_R_ci95": [
+   -0.32364583333333335,
+   0.14927083333333335
+  ],
+  "longs": 70,
+  "shorts": 58,
+  "exits": {
+   "stop": 87,
+   "target": 41
+  },
+  "median_risk": 37.5
+ },
+ "null_mean": -0.00480390625,
+ "null_p95": 0.171875,
+ "percentile_vs_null": 0.3323,
+ "verdict": "FAIL (>=100 True, PF False, exp False, null False, stress False)"
+}
