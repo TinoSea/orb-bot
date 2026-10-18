@@ -841,8 +841,7 @@ The La'Kera / community line (H-004 to H-010) is closed: re-open only with a ful
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
 **Idea:** the S&P 500's move from the previous close to 10:00 New York predicts the direction of the last
 30 minutes (15:30–16:00). One trade a day, evenings in Harare. Small edge per trade; costs are the main risk.
-**Registered (full rules):** 2026-10-18, before any H-003 code was run on market data.  **Status:** OPEN
-(waiting for the US500 export). The first outside-sourced idea after H-004..H-010; the same family (short-term
+**Registered (full rules):** 2026-10-18, before any H-003 code was run on market data.  **Status:** FAILED (2026-10-18). The first outside-sourced idea after H-004..H-010; the same family (short-term
 momentum) as the only consistent effect found so far.
 
 **Exact rules.** FP Markets US500 5-minute bars, New York time (server − 7 h), 2023-01-01→2026-10-16, weekdays.
@@ -861,8 +860,14 @@ median); days where the 15:00-15:30 move agrees with the signal (the paper's sec
 **Caveats, stated now.** Published 2018 on 1993-2013 data; published patterns often weaken after publication. No stop:
 a bot would need a catastrophe stop, which this test does not model. US500 2024-01→03 bars were looked at in H-001
 (a different rule). **Budget:** one rule, one run, no variants. A pass earns a forward demo, not money.
-### Results
-### Decision
+### Results (2026-10-18, run once)
+Data: FP Markets US500 M5, 2022-11-30→2026-10-16 (274,059 bars; tick volume jumps at 09:30 NY, so the clock is right).
+**940 trades, win 47.6%, gross +0.29 points, after costs −0.21 points (−$1.05 per MES; PF 0.95, 95% −0.96 to +0.56)
+→ FAIL** on every criterion except trade count. Always long 15:30-16:00 earned +0.21 points gross, so the signal adds
+~0.08 points; 78th percentile vs random direction (95th = +0.14 net). Stress −0.71. Years after costs: 2023 +0.26,
+2024 −0.68, 2025 −0.25, 2026 −0.16 (1 of 4 positive). Descriptive: the paper's stronger cases go the wrong way here —
+large 10:00 moves −0.23 gross (small +0.81); 15:00-15:30 move agreeing −0.02 gross (disagreeing +0.62).
+### Decision (2026-10-18): FAIL — the published effect is not present in 2023-2026 S&P 500 data after costs. Closed.
 
 ---
 

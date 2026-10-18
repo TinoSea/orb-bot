@@ -1,0 +1,199 @@
+{
+ "all": {
+  "trades": 940,
+  "win_rate": 0.476,
+  "gross_pts": 0.291,
+  "net_pts": -0.209,
+  "net_ci95": [
+   -0.961,
+   0.563
+  ],
+  "net_PF": 0.95,
+  "net_usd_per_MES": -1.05,
+  "net_bp": -0.3,
+  "total_net_pts": -196.9
+ },
+ "stress": {
+  "trades": 940,
+  "win_rate": 0.451,
+  "gross_pts": 0.291,
+  "net_pts": -0.709,
+  "net_ci95": [
+   -1.461,
+   0.063
+  ],
+  "net_PF": 0.841,
+  "net_usd_per_MES": -3.55,
+  "net_bp": -1.21,
+  "total_net_pts": -666.9
+ },
+ "always_long": {
+  "trades": 940,
+  "win_rate": 0.484,
+  "gross_pts": 0.211,
+  "net_pts": -0.289,
+  "net_ci95": [
+   -1.059,
+   0.459
+  ],
+  "net_PF": 0.931,
+  "net_usd_per_MES": -1.45,
+  "net_bp": -0.37,
+  "total_net_pts": -272.0
+ },
+ "random_direction": {
+  "mean": -0.504,
+  "p95": 0.14,
+  "rule_percentile": 0.778
+ },
+ "by_year": {
+  "2023": {
+   "trades": 246,
+   "win_rate": 0.472,
+   "gross_pts": 0.764,
+   "net_pts": 0.264,
+   "net_ci95": [
+    -0.833,
+    1.424
+   ],
+   "net_PF": 1.089,
+   "net_usd_per_MES": 1.32,
+   "net_bp": 0.77,
+   "total_net_pts": 64.9
+  },
+  "2024": {
+   "trades": 248,
+   "win_rate": 0.472,
+   "gross_pts": -0.177,
+   "net_pts": -0.677,
+   "net_ci95": [
+    -2.244,
+    0.852
+   ],
+   "net_PF": 0.843,
+   "net_usd_per_MES": -3.39,
+   "net_bp": -1.18,
+   "total_net_pts": -168.0
+  },
+  "2025": {
+   "trades": 247,
+   "win_rate": 0.502,
+   "gross_pts": 0.248,
+   "net_pts": -0.252,
+   "net_ci95": [
+    -2.09,
+    1.587
+   ],
+   "net_PF": 0.952,
+   "net_usd_per_MES": -1.26,
+   "net_bp": -0.53,
+   "total_net_pts": -62.2
+  },
+  "2026": {
+   "trades": 199,
+   "win_rate": 0.452,
+   "gross_pts": 0.341,
+   "net_pts": -0.159,
+   "net_ci95": [
+    -1.771,
+    1.471
+   ],
+   "net_PF": 0.962,
+   "net_usd_per_MES": -0.79,
+   "net_bp": -0.24,
+   "total_net_pts": -31.6
+  }
+ },
+ "longs": {
+  "trades": 534,
+  "win_rate": 0.493,
+  "gross_pts": 0.441,
+  "net_pts": -0.059,
+  "net_ci95": [
+   -1.029,
+   0.909
+  ],
+  "net_PF": 0.985,
+  "net_usd_per_MES": -0.29,
+  "net_bp": 0.1,
+  "total_net_pts": -31.5
+ },
+ "shorts": {
+  "trades": 406,
+  "win_rate": 0.453,
+  "gross_pts": 0.093,
+  "net_pts": -0.407,
+  "net_ci95": [
+   -1.649,
+   0.895
+  ],
+  "net_PF": 0.912,
+  "net_usd_per_MES": -2.04,
+  "net_bp": -0.82,
+  "total_net_pts": -165.4
+ },
+ "big_10am_move": {
+  "trades": 470,
+  "win_rate": 0.46,
+  "gross_pts": -0.231,
+  "net_pts": -0.731,
+  "net_ci95": [
+   -1.877,
+   0.423
+  ],
+  "net_PF": 0.847,
+  "net_usd_per_MES": -3.66,
+  "net_bp": -1.35,
+  "total_net_pts": -343.7
+ },
+ "small_10am_move": {
+  "trades": 470,
+  "win_rate": 0.491,
+  "gross_pts": 0.812,
+  "net_pts": 0.312,
+  "net_ci95": [
+   -0.701,
+   1.321
+  ],
+  "net_PF": 1.087,
+  "net_usd_per_MES": 1.56,
+  "net_bp": 0.75,
+  "total_net_pts": 146.8
+ },
+ "r12_agrees": {
+  "trades": 488,
+  "win_rate": 0.465,
+  "gross_pts": -0.016,
+  "net_pts": -0.516,
+  "net_ci95": [
+   -1.515,
+   0.544
+  ],
+  "net_PF": 0.879,
+  "net_usd_per_MES": -2.58,
+  "net_bp": -0.94,
+  "total_net_pts": -251.8
+ },
+ "r12_disagrees": {
+  "trades": 452,
+  "win_rate": 0.487,
+  "gross_pts": 0.622,
+  "net_pts": 0.122,
+  "net_ci95": [
+   -1.004,
+   1.269
+  ],
+  "net_PF": 1.03,
+  "net_usd_per_MES": 0.61,
+  "net_bp": 0.39,
+  "total_net_pts": 55.0
+ },
+ "verdict": "FAIL (>=500 True, CI>0 False, beats benchmarks False, stress False, 3/4 years False)",
+ "data": {
+  "files": [
+   "US500_M5.csv"
+  ],
+  "first": "2022-11-30 18:00:00",
+  "last": "2026-10-16 16:55:00"
+ }
+}
