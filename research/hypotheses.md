@@ -828,17 +828,41 @@ Exits: 274 at 12:00, 212 stop, 64 target. **Random entry (same days, directions,
 By year: 2023 −0.009R (280); 2024 +0.077R (270); 2025 +0.047R (228); 2026 −0.025R (135). All 2023-26: 913, +0.028R.
 Trade 2 is negative in every year (all years 86 trades, −0.076R).
 Compared with V3 on 2023-01→2025-06 (+0.095R after costs), entering on the break close and closing at 12:00 earned less.
-### Decision
-Pending (Tino).
+### Decision (2026-10-18, Tino): NOT PURSUED, despite passing the registered bar.
+The second trade loses money in every year, and the rule earns less than random entry timing in the same directions
+(+0.043R vs +0.128R gross), so entering on the break adds nothing. No demo, no MT5 bot. The direction of the opening
+break remains the only consistent effect found in H-008/H-010; there is no unseen 2023-2026 data left for it.
+The La'Kera / community line (H-004 to H-010) is closed: re-open only with a full broker trade history.
 
 ---
 
-## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
+## H-003: Intraday momentum, first half-hour → last half-hour (S&P 500)
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
 **Idea:** the S&P 500's move from the previous close to 10:00 New York predicts the direction of the last
 30 minutes (15:30–16:00). One trade a day, evenings in Harare. Small edge per trade; costs are the main risk.
-**Status:** parked until H-001 is closed and H-002 has an in-sample result. Full rules to be written before any testing.
+**Registered (full rules):** 2026-10-18, before any H-003 code was run on market data.  **Status:** OPEN
+(waiting for the US500 export). The first outside-sourced idea after H-004..H-010; the same family (short-term
+momentum) as the only consistent effect found so far.
+
+**Exact rules.** FP Markets US500 5-minute bars, New York time (server − 7 h), 2023-01-01→2026-10-16, weekdays.
+1. Trading days = the NYSE calendar (holidays dropped even if the CFD prints bars). Previous close = the close of the
+   previous NYSE day's bar ending at its close (15:55 bar; on a half day, the 12:55 bar).
+2. Signal = close of the 09:55 bar (price at 10:00) minus the previous close. Above zero → long; below → short; zero → no trade.
+3. Enter at the open of the 15:30 bar; exit at the close of the 15:55 bar (16:00). No stop and no target, as in the paper.
+4. No trade on half days, or if the previous close, the 09:55 bar or any of the six bars 15:30-16:00 is missing.
+Costs 0.50 index points per round trip (≈ MES 1-tick spread + commission; the CFD's recorded spread is 0.44).
+Stress: 1.00 point. Results in index points, per $-per-MES (× $5), and as a % of price.
+**Benchmarks:** (a) always long 15:30-16:00 (end-of-day drift); (b) random direction each day, 10,000 runs.
+**Pass (all, decided now):** ≥ 500 trades; after costs mean > 0 with the 95% bootstrap range above zero; mean above
+always-long and above the 95th percentile of random direction; stress mean > 0; at least 3 of 4 years positive after costs.
+**Reported, not part of the verdict:** each year; longs vs shorts; days with a large vs small 10:00 move (split at the
+median); days where the 15:00-15:30 move agrees with the signal (the paper's second predictor).
+**Caveats, stated now.** Published 2018 on 1993-2013 data; published patterns often weaken after publication. No stop:
+a bot would need a catastrophe stop, which this test does not model. US500 2024-01→03 bars were looked at in H-001
+(a different rule). **Budget:** one rule, one run, no variants. A pass earns a forward demo, not money.
+### Results
+### Decision
 
 ---
 
