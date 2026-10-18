@@ -88,42 +88,58 @@ class Bias:
         return self.event[1]
 
 
-# ---------------------------------------------------------------- one day
+# ---------------------------------------------------------------- one day (amendment H-007/1)
+def make_order(kind, d, price, stop, cancel, expiry, why, atr, levels, variant):
+    risk = abs(price - stop)
+    if not (max(4.0, 0.25 * atr) <= risk <= 3 * atr):
+        return None, f'risk {risk:.1f} outside limits ({why})'
+    if variant == 'V1':
+        beyond = [v for v in levels if d * (v - price) >= risk]
+        target = (min(beyond) if d > 0 else max(beyond)) if beyond else price + d * 2 * risk
+    else:
+        target = price + d * 2 * risk
+    return dict(kind=kind, dir=d, price=price, stop=stop, cancel=cancel, expiry=expiry, why=why, target=target), None
+
+
 def run_day(D, day, variant, trace=False):
     L = D.levels(day)
     if L is None:
         return [], []
-    if variant == 'V3' and 'AH' in L:
-        arng, lrng = L['AH'] - L['AL'], L['LH'] - L['LL']
-        if arng > 0 and lrng >= 2 * arng and (L['LH'] > L['AH'] or L['LL'] < L['AL']):
-            return [], ['skip: London expanded (V3 filter)']
     m5 = D.m5.loc[day + FILL_FROM - pd.Timedelta(minutes=30):day + FLAT - pd.Timedelta(minutes=5)]
     m1 = D.m1.loc[day + FILL_FROM:day + FLAT]
     levels = list(L.values())
     bias = Bias(L['LH'], L['LL'])
     log, trades = [], []
-    pend, pos = None, None
+    pend, pos = [], None
+    last_exit = day + FILL_FROM - pd.Timedelta(minutes=30)
     k5 = 0
     bars5 = m5[m5.index >= day + FILL_FROM]
     for t, r in m1.iterrows():
-        # 5-minute closes up to t
         while k5 < len(bars5) and bars5.index[k5] + pd.Timedelta(minutes=5) <= t:
             ts = bars5.index[k5]; b = bars5.iloc[k5]; k5 += 1
             close_t = ts + pd.Timedelta(minutes=5)
             before = bias.event
             bias.update(ts, b.open, b.high, b.low, b.close, b.atr)
-            if trace and bias.event is not before:
+            if trace and variant == 'V3' and bias.event is not before:
                 log.append(f'{close_t.time()} {bias.event[2]} -> bias {bias.dir:+d}')
-            if pend and ((pend['dir'] > 0 and b.close < pend['cancel']) or (pend['dir'] < 0 and b.close > pend['cancel'])
-                         or bias.dir != pend['dir']):
-                if trace: log.append(f'{close_t.time()} order cancelled')
-                pend = None
-            if pos or pend or len(trades) >= 2 or bias.dir == 0 or close_t >= day + FILL_TO:
+            keep = []
+            for o in pend:
+                dead = o['cancel'] is not None and ((o['dir'] > 0 and b.close < o['cancel']) or (o['dir'] < 0 and b.close > o['cancel']))
+                if variant == 'V3' and bias.dir != o['dir']:
+                    dead = True
+                if dead and trace: log.append(f"{close_t.time()} {'BUY' if o['dir'] > 0 else 'SELL'} order cancelled")
+                if not dead: keep.append(o)
+            pend = keep
+            if pos or pend or len(trades) >= 2 or close_t >= day + FILL_TO:
                 continue
-            d, atr = bias.dir, b.atr
+            if variant == 'V3' and bias.dir == 0:
+                continue
+            atr = b.atr
             hist = m5.loc[:ts]
-            after = hist[hist.index > bias.event[0]]
-            order = None
+            after = hist[hist.index >= last_exit]
+            if variant == 'V3':
+                after = after[after.index > bias.event[0]]
+            orders = []
             if variant in ('V0', 'V1', 'V3'):
                 for n in (3, 2):
                     if len(after) < n:
@@ -133,37 +149,35 @@ def run_day(D, day, variant, trace=False):
                     if hi - lo > 1.5 * atr:
                         continue
                     dist = min(0.0 if lo <= v <= hi else min(abs(lo - v), abs(hi - v)) for v in levels)
-                    if dist > atr:
+                    if dist > 0.5 * atr:
                         continue
-                    trig = hi + TICK if d > 0 else lo - TICK
-                    stop = lo - TICK if d > 0 else hi + TICK
-                    order = dict(kind='stop', dir=d, price=trig, stop=stop, cancel=lo if d > 0 else hi,
-                                 expiry=close_t + pd.Timedelta(minutes=15), why=f'pause {n} bars {lo:.2f}-{hi:.2f}')
+                    why = f'pause {n} bars {lo:.2f}-{hi:.2f}'
+                    exp = close_t + pd.Timedelta(minutes=15)
+                    sides = [bias.dir] if variant == 'V3' else [1, -1]
+                    for d in sides:
+                        o, err = make_order('stop', d, hi + TICK if d > 0 else lo - TICK, lo - TICK if d > 0 else hi + TICK,
+                                            None, exp, why, atr, levels, variant)
+                        if o: orders.append(o)
+                        elif trace: log.append(f'{close_t.time()} setup skipped: {err}')
                     break
-            else:   # V2 BOS
+            else:   # V2 BOS, either direction
                 if len(after) >= 7:
                     prev6, cur = after.iloc[-7:-1], after.iloc[-1]
-                    if (d > 0 and cur.close > prev6.high.max()) or (d < 0 and cur.close < prev6.low.min()):
+                    d = 1 if cur.close > prev6.high.max() else (-1 if cur.close < prev6.low.min() else 0)
+                    if d:
                         opp = prev6[(prev6.close < prev6.open)] if d > 0 else prev6[(prev6.close > prev6.open)]
                         if len(opp):
                             z = opp.iloc[-1]
-                            order = dict(kind='limit', dir=d, price=z.high if d > 0 else z.low,
-                                         stop=(z.low - TICK) if d > 0 else (z.high + TICK), cancel=z.low if d > 0 else z.high,
-                                         expiry=close_t + pd.Timedelta(minutes=30), why=f'BOS, zone {z.low:.2f}-{z.high:.2f}')
-            if order:
-                risk = abs(order['price'] - order['stop'])
-                if not (max(4.0, 0.25 * atr) <= risk <= 3 * atr):
-                    if trace: log.append(f"{close_t.time()} setup skipped: risk {risk:.1f} outside limits ({order['why']})")
-                    continue
-                if variant == 'V1':
-                    beyond = [v for v in levels if d * (v - order['price']) >= risk]
-                    order['target'] = (min(beyond) if d > 0 else max(beyond)) if beyond else order['price'] + d * 2 * risk
-                else:
-                    order['target'] = order['price'] + d * 2 * risk
-                pend = order
-                if trace: log.append(f"{close_t.time()} {order['kind']} order {'BUY' if d > 0 else 'SELL'} {order['price']:.2f} "
-                                     f"stop {order['stop']:.2f} target {order['target']:.2f} ({order['why']})")
-        # 1-minute bar: exits, then fills
+                            o, err = make_order('limit', d, z.high if d > 0 else z.low, (z.low - TICK) if d > 0 else (z.high + TICK),
+                                                z.low if d > 0 else z.high, close_t + pd.Timedelta(minutes=30),
+                                                f'BOS, zone {z.low:.2f}-{z.high:.2f}', atr, levels, variant)
+                            if o: orders.append(o)
+                            elif trace: log.append(f'{close_t.time()} setup skipped: {err}')
+            pend = orders
+            if trace:
+                for o in orders:
+                    log.append(f"{close_t.time()} {o['kind']} order {'BUY' if o['dir'] > 0 else 'SELL'} {o['price']:.2f} "
+                               f"stop {o['stop']:.2f} target {o['target']:.2f} ({o['why']})")
         if pos:
             d = pos['dir']
             hit_stop = (r.low <= pos['stop']) if d > 0 else (r.high >= pos['stop'])
@@ -178,37 +192,40 @@ def run_day(D, day, variant, trace=False):
             if ex:
                 pos.update(exit=ex[0], how=ex[1], exit_t=t)
                 pos['R'] = d * (ex[0] - pos['fill']) / pos['risk']
-                trades.append(pos)
+                trades.append(pos); last_exit = t
                 if trace: log.append(f"{t.time()} EXIT {ex[1]} at {ex[0]:.2f}  R {pos['R']:+.2f}")
                 pos = None
             continue
-        if pend:
-            if t >= pend['expiry']:
-                if trace: log.append(f'{t.time()} order expired')
-                pend = None
-                continue
-            if not (day + FILL_FROM <= t < day + FILL_TO) or (day + NEWS_A <= t < day + NEWS_B):
-                continue
-            d = pend['dir']
-            if pend['kind'] == 'stop':
-                filled = (r.high >= pend['price']) if d > 0 else (r.low <= pend['price'])
-                fill = (max(pend['price'], r.open) if d > 0 else min(pend['price'], r.open)) if filled else None
+        if not pend:
+            continue
+        if t >= pend[0]['expiry']:
+            if trace: log.append(f'{t.time()} order(s) expired')
+            pend = []
+            continue
+        if not (day + FILL_FROM <= t < day + FILL_TO) or (day + NEWS_A <= t < day + NEWS_B):
+            continue
+        for o in pend:
+            d = o['dir']
+            if o['kind'] == 'stop':
+                filled = (r.high >= o['price']) if d > 0 else (r.low <= o['price'])
+                fill = (max(o['price'], r.open) if d > 0 else min(o['price'], r.open)) if filled else None
             else:
-                filled = (r.low <= pend['price']) if d > 0 else (r.high >= pend['price'])
-                fill = (min(pend['price'], r.open) if d > 0 else max(pend['price'], r.open)) if filled else None
-            if filled:
-                risk = d * (fill - pend['stop'])
-                if risk <= 0:
-                    pend = None
-                    continue
-                pos = dict(day=str(day.date()), entry_t=t, dir=d, fill=fill, stop=pend['stop'], target=pend['target'],
-                           risk=risk, kind=pend['kind'], why=pend['why'], bias=bias.event[2])
-                pend = None
-                if trace: log.append(f"{t.time()} FILLED {'LONG' if d > 0 else 'SHORT'} at {fill:.2f} risk {risk:.1f}")
-                if (r.low <= pos['stop']) if d > 0 else (r.high >= pos['stop']):
-                    pos.update(exit=pos['stop'], how='stop', exit_t=t, R=-1.0)
-                    trades.append(pos); pos = None
-                    if trace: log.append(f'{t.time()} EXIT stop on the fill bar  R -1.00')
+                filled = (r.low <= o['price']) if d > 0 else (r.high >= o['price'])
+                fill = (min(o['price'], r.open) if d > 0 else max(o['price'], r.open)) if filled else None
+            if not filled:
+                continue
+            pend = []
+            risk = d * (fill - o['stop'])
+            if risk <= 0:
+                break
+            pos = dict(day=str(day.date()), entry_t=t, dir=d, fill=fill, stop=o['stop'], target=o['target'],
+                       risk=risk, kind=o['kind'], why=o['why'], bias=bias.event[2])
+            if trace: log.append(f"{t.time()} FILLED {'LONG' if d > 0 else 'SHORT'} at {fill:.2f} risk {risk:.1f}")
+            if (r.low <= pos['stop']) if d > 0 else (r.high >= pos['stop']):
+                pos.update(exit=pos['stop'], how='stop', exit_t=t, R=-1.0)
+                trades.append(pos); last_exit = t; pos = None
+                if trace: log.append(f'{t.time()} EXIT stop on the fill bar  R -1.00')
+            break
     return trades, log
 
 
@@ -292,8 +309,8 @@ if __name__ == '__main__':
     else:
         D = Data(load_m1())
     if mode == 'gate':
-        for day, v in [('2026-06-09', 'V0'), ('2026-06-09', 'V2'), ('2025-10-31', 'V0'), ('2025-11-03', 'V0'),
-                       ('2026-10-05', 'V0'), ('2026-10-12', 'V0')]:
+        for day, v in [('2026-06-09', 'V0'), ('2026-10-05', 'V0'), ('2026-06-09', 'V2'), ('2026-10-05', 'V2'),
+                       ('2025-10-31', 'V0'), ('2025-11-03', 'V0'), ('2026-10-12', 'V0')]:
             tr, log = run_day(D, pd.Timestamp(day), v, trace=True)
             L = D.levels(pd.Timestamp(day))
             print(f'===== {day} {v}  London H {L["LH"]:.2f} L {L["LL"]:.2f} 50% {L["L50"]:.2f}')

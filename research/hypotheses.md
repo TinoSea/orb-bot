@@ -599,7 +599,7 @@ gross edge is real; only then (b) a cost-reducing bracket (wider stop/target) or
 
 ## H-007: New York X bias + BPB / BOS entries on 5-minute bars (her full framework)
 
-**Registered:** 2026-10-18, before any H-007 code existed.  **Status:** OPEN
+**Registered:** 2026-10-18, before any H-007 code existed.  **Status:** STOPPED at gate (2026-10-18)
 
 **Sources.** Her videos (bias from London high/low; no trade before one is tested; never trade consolidation; zone,
 rejection or candle-break entries; done before 10:00 news), her own chart of 2026-10-05 (BPB, London high/low/50%),
@@ -659,6 +659,16 @@ one-cancels-other, valid 3 bars (a fill on one side cancels the other). Directio
 **New gate:** G1 2026-06-09 — V0 long filled 09:35-09:50; G3 2026-10-05 — V0 long filled 09:10-09:35. Diagnostics:
 2025-10-31, 2025-11-03, 2026-10-12. If the new gate fails, H-007 stops here and is reported as not reproducible.
 Pass criteria, periods and the single final test are unchanged.
+
+### Result (2026-10-18): STOPPED at the amended gate — her BPB is not reproducible as a rule.
+New gate traces: on 2026-06-09 and 2026-10-05, V0 found earlier "pauses at a key level" in premarket (08:05/08:55 and
+08:05/08:30), filled both (all four lost) and reached the 2-trade limit before her setups (09:40 and 09:20). The BOS
+variant (V2) did take a long at 09:24 on 10-05 (+2R), but the gate was registered on V0. As registered, H-007 stops:
+no development, secondary or final statistics were run or looked at.
+**What it shows:** "a pause at a key level, then a break" occurs several times every morning; the traders choose which
+one to take (news, which level matters, the day's context), and that choice is not in the rules we could recover.
+Two pre-registered attempts (London-extreme bias; pause-at-level) both failed to reproduce dated trades.
+Any further BPB/BOS work needs a new registration (H-008) with an explicit selection rule and counts as a new trial.
 
 ---
 
