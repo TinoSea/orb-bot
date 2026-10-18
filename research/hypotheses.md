@@ -23,6 +23,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-013 | H-011 + earlier-day zones only | failed | beat random before costs, −0.04R after |
 | H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
 | H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
+| **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
 ---
@@ -1128,6 +1129,31 @@ better than random entries, the second time after H-013's development period, no
 smaller than the costs and weakening year by year. Not tradable as a rule. Her zone method is closed for backtesting
 (no clean data left); the remaining question, whether a trader's selection among these setups adds enough to beat
 costs, can only be answered by forward demo records (`research/journal/setups_log.csv`).
+
+---
+
+## H-017: Forward test of her zone method's best slice (first try, 09:30-10:00) on demo
+
+**Registered:** 2026-10-18, before any forward trade.  **Status:** OPEN — forward period starts 2026-10-19.
+**Why.** In H-016's trades (2023-01→2025-06), first tries at a zone with signals 09:30-10:00 won **49.1%** (389 trades,
++0.081R after futures costs) against 45.1% for all trades. The slice was chosen after seeing the results, so only new
+data can show whether it is real.
+**Rules (code `mt5/LK_Forward.mq5` v1.00, all inputs at defaults).** US100 on FP Markets demo. Zones: 5/15-minute fair
+value gaps ≥ 5 points formed on the last 5 trading days before today, live until a candle of their time frame closes
+beyond the far edge. **First try only** (a zone is used once per day). Signals on 15-second candles (from live bid ticks)
+closing 09:30-09:57 NY: touch of the gap, close against it, wick ≥ body; stop order 0.25 beyond the candle (mid price),
+valid 45 s. Stop 12.5, target 16.25 points; 15-minute cap; flat 11:45; one position; ≤ 3 trades and ≤ 2 losses a day;
+no Fridays; 1% risk. Differences from the backtest, stated now: live bid candles instead of mid, CFD fills and costs.
+**Costs.** The CFD spread (≈ 1.2 points ≈ 0.10R) is about twice the futures estimate, so break-even on demo is a
+**47.7%** win rate (futures: 45.4%).
+**Pace.** About 0.6 trades a trading day (155 a year).
+**Stop early** if after 50 trades the win rate is below 38% (more than two standard errors below 49%).
+**Verdict at 150 trades:** win rate ≥ 47.7% and demo net profit > 0 → the edge looks real; continue to 300 before
+any real money. Win rate < 45% → the 49% was luck; close. In between → continue to 300.
+Honest power: at 150 trades the win rate is known to about ±8 points (95%), so a single checkpoint cannot prove 49% vs 45%.
+**Records:** `MQL5/Files/LK_journal.csv`, sent to Claude monthly; Tino's manual journal runs alongside it.
+### Results
+### Decision
 
 ---
 
