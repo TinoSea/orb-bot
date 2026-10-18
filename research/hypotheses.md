@@ -769,6 +769,17 @@ Apr-Oct 2026 is reported only descriptively (already used twice).
 random-entry null (same days, directions, bracket); stress (target trades through by 0.25, stop 0.5 worse, costs
 doubled) expectancy > 0. Pass → MT5 bot → 2-3 months demo on NQ/MNQ costs.
 
+### Development results (2026-10-18), after futures costs
+A 12.5/25: 248 trades, win 39.5%, **+0.14R** (PF 1.23); B ATR: 243, 37.4%, +0.07R (1.11); C 8/20: 245, 35.5%, +0.17R (1.25);
+**D daily zones 12.5/25: 44 trades, 47.7%, +0.39R (1.71) → pick.** All 95% ranges touch zero.
+Apr-Oct 2026, descriptive (already used twice): A 151 trades **+0.13R** (PF 1.20); B 137, +0.12R; C 147, +0.02R; D 24, +0.21R.
+**Amendment H-009/1 (before any 2023-2025 data exists here):** A held almost unchanged on Apr-Oct 2026 (+0.14R → +0.13R)
+with 6× D's trade count, so A is added as a second candidate for the confirmation. Because two rules are confirmed,
+each must beat the **97.5th** percentile of its random-entry null (Bonferroni); other pass rules unchanged. A was added
+after seeing the Apr-Oct descriptive numbers; the confirmation data is untouched.
+**Data needed:** FP Markets US100 ticks 09:00-11:45 NY and M1 bars from 2022-10-01 to 2025-07-01 (ExportTicks, default
+NY window), converted to 1-second bars like H-005.
+
 ---
 
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour

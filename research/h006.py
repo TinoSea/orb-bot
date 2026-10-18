@@ -81,8 +81,11 @@ def outcome_x(t, mh, ml, mc, i0, side, e, stop, tgt, cap, through, slip):
 
 
 # ---------------------------------------------------------------- one day
-def run_day(D, Z, C, date, variant, stop_pts=None, tgt_pts=None, through=0.0, slip=0.0):
+def run_day(D, Z, C, date, variant, stop_pts=None, tgt_pts=None, through=0.0, slip=0.0,
+            stop_atr=None, tgt_mult=None, tf_only=None, cap_secs=900):
     zones = Z.zones(date)
+    if tf_only:
+        zones = [z for z in zones if z['tf'] in tf_only]
     if not zones:
         return []
     t = D['t']
@@ -137,8 +140,15 @@ def run_day(D, Z, C, date, variant, stop_pts=None, tgt_pts=None, through=0.0, sl
                         stop = (fill - (arm['ext'] - 0.25)) if d > 0 else ((arm['ext'] + 0.25) - fill)
                         if stop < 3 or stop > 12.5:
                             arm = None; i += 1; continue
-                    cap = min(900, T1145 - now)
+                    if stop_atr:
+                        a15, _, _ = C.atr_at(pd.Timestamp(date) + pd.Timedelta(seconds=now))
+                        stop = stop_atr * a15
+                        if stop < 6 or stop > 40:
+                            arm = None; i += 1; continue
+                    cap = min(cap_secs, T1145 - now)
                     tgt = stop if tgt_pts is None else tgt_pts
+                    if tgt_mult:
+                        tgt = tgt_mult * stop
                     R, k, amb = outcome_x(t, mh, ml, mc, i, d, fill, stop, tgt, cap, through, slip)
                     out.append(dict(date=date, t=now, side=d, R=R, amb=amb, secs=int(t[k]) - now, stop=stop, tgt=tgt,
                                     tf=arm['zone']['tf'], fill=fill, i=int(i)))
