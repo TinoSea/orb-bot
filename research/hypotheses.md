@@ -442,7 +442,7 @@ costs in (1) are part of the test.
 
 ## H-005: Where does her edge live? Replication from her own trades
 
-**Registered:** 2026-10-18, before any market data around her trades was looked at. **Status:** OPEN
+**Registered:** 2026-10-18, before any market data around her trades was looked at. **Status:** CLOSED (no edge found, 2026-10-18)
 
 **Why.** H-004 coded her *described* rules and found no edge. Traders describe their own rules poorly; their
 trades are the better evidence. H-005 reconstructs what she *did* from seven of her videos (screen recordings
@@ -518,6 +518,34 @@ then each rule runs **once** on the holdout (2026-04-01→2026-10-16).
 and mean R above the **97.5th** percentile of a random-entry null (two rules → Bonferroni), where the null keeps each day's
 trade count and directions and draws entry seconds uniformly from 09:30-09:41 on the same days.
 If a rule cannot reach 100 trades it fails criterion 1 and is reported as such.
+
+### Results (2026-10-18)
+**Q1 her entries vs random (8 aligned trades, 2 days; mid prices, entry time averaged over the ±15-30 s frame uncertainty):**
+her mean +0.361R gross (futures estimate +0.271R; her own P&L implies +0.44R). Random entries on the same days, same
+directions, 09:30-11:00: mean +0.004R, 95th percentile +0.500R → **her 85th percentile: not passed**. Restricted to 09:30-09:45
+(descriptive): random +0.144R, her 74th percentile — most of her result on these two days is "short on a falling open".
+Her trades resolved in 3-27 s; shifting an entry by a few seconds inside the frame uncertainty flips outcomes
+(window win share 44-97% per trade), so second-level timing — the part frames cannot record — decides each trade.
+**Q2 sizing/exits:** her exits are the fixed 25-tick bracket (every full win/loss = $2,000 at 16 NQ). On 10-31 she doubled
+to 32 contracts after two losses; at fixed size the day is +1R instead of +2R. Sizing changes the dollars, not the edge.
+Filmed days: 100%, 100% and 72% win rates (her own statistics) — selected days.
+**Q3 (8 positives / 1,440 candidates):** L1 logistic leave-one-day-out AUC 0.78 (bootstrap 0.68-0.88), driven by
+minutes since 09:30 (all 8 in the first 11 min) and London-sweep direction (7/8). H-004 zone rejection fired on 0/8 and
+"inside a zone" on 0/8; 11-03 has no zones by the H-004 definition. Her stated rule, as coded, is not what she trades.
+**Q4 development (2025-07-01→2026-03-31):** Q4a 54 trades, win 48.1%, gross −0.037R, futures −0.127R; Q4b 389 trades,
+win 50.9%, gross +0.018R, futures −0.072R (95% −0.17 to +0.03), 69th percentile vs random. Both fail; no changes made.
+**Q4 holdout, run once (2026-04-01→2026-10-16):** Q4a **28 trades**, win 57.1%, gross +0.143R, futures +0.053R (PF 1.11),
+80th percentile vs random → **FAIL** (too few trades; PF and expectancy below bar). Q4b **331 trades**, win 52.0%,
+gross +0.039R, futures **−0.051R** (PF 0.90), 71st percentile vs random → **FAIL**.
+Checks: 1-second engine vs raw-tick replay same outcome on 2,400/2,400 sampled entries; random-entry nulls average ≈ 0R.
+Break-even win rate for a 1:1 bracket after futures costs is 54.5%; her claimed 65-70% is not reproduced by any rule here.
+
+### Decision (2026-10-18): CLOSE H-005 — no mechanical edge found; whatever edge she has is not in the visible rule.
+Her edge, if real, lives in what the frames and her description do not contain: second-by-second execution at the open
+(reading the order book / tape on a 15-second chart) and choice of days. Neither the stated rule (H-004), nor the
+features that distinguish her filmed trades (time of day, London-sweep direction), produce an edge after futures costs.
+Nothing from H-004/H-005 goes to demo or live. Re-open only with her full trade export (e.g. a Tradovate fills CSV
+for ≥3 consecutive months including losing days), which would allow Q1 on ≥100 trades with exact times.
 
 ---
 

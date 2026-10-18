@@ -1,0 +1,47 @@
+{
+ "Q4a": {
+  "rule": "Q4a",
+  "trades": 54,
+  "days": 48,
+  "win_rate": 0.48148148148148145,
+  "gross_R": -0.037037037037037035,
+  "gross_PF": 0.9285714285714286,
+  "fut_R": -0.12703703703703703,
+  "fut_PF": 0.775229357798165,
+  "fut_R_ci95": [
+   -0.3862962962962963,
+   0.13222222222222224
+  ],
+  "ambiguous": 0,
+  "median_secs": 5.0,
+  "null_mean": -0.01931111111111111,
+  "null_p975": 0.25925925925925924,
+  "percentile_vs_null": 0.3911,
+  "verdict": "FAIL (>=100 trades False, PF>=1.2 False, exp>=+0.10R False, beats null 97.5% False)"
+ },
+ "Q4b": {
+  "rule": "Q4b",
+  "trades": 389,
+  "days": 119,
+  "win_rate": 0.5089974293059126,
+  "gross_R": 0.017994858611825194,
+  "gross_PF": 1.036649214659686,
+  "fut_R": -0.07200514138817478,
+  "fut_PF": 0.8654594360920311,
+  "fut_R_ci95": [
+   -0.17483290488431874,
+   0.025681233933161976
+  ],
+  "ambiguous": 0,
+  "median_secs": 5.0,
+  "null_mean": -0.008608740359897171,
+  "null_p975": 0.08997429305912596,
+  "percentile_vs_null": 0.6878,
+  "verdict": "FAIL (>=100 trades True, PF>=1.2 False, exp>=+0.10R False, beats null 97.5% False)"
+ },
+ "period": [
+  "2025-07-01",
+  "2026-03-31"
+ ],
+ "days_in_period": 194
+}
