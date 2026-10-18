@@ -1,0 +1,571 @@
+{
+ "judge_2023_24": {
+  "trades": 550,
+  "win_rate": 0.475,
+  "gross_R": 0.043,
+  "fut_R": 0.033,
+  "fut_PF": 1.08,
+  "fut_R_ci95": [
+   -0.053,
+   0.12
+  ],
+  "longs": 287,
+  "shorts": 263,
+  "exits": {
+   "time": 274,
+   "stop": 212,
+   "target": 64
+  },
+  "trade1": {
+   "trades": 494,
+   "win_rate": 0.47,
+   "gross_R": 0.05,
+   "fut_R": 0.04,
+   "fut_PF": 1.09,
+   "fut_R_ci95": [
+    -0.056,
+    0.138
+   ],
+   "longs": 251,
+   "shorts": 243,
+   "exits": {
+    "time": 238,
+    "stop": 195,
+    "target": 61
+   }
+  },
+  "trade2": {
+   "trades": 56,
+   "win_rate": 0.518,
+   "gross_R": -0.014,
+   "fut_R": -0.026,
+   "fut_PF": 0.93,
+   "fut_R_ci95": [
+    -0.254,
+    0.208
+   ],
+   "longs": 36,
+   "shorts": 20,
+   "exits": {
+    "time": 36,
+    "stop": 17,
+    "target": 3
+   }
+  },
+  "long": {
+   "trades": 287,
+   "win_rate": 0.509,
+   "gross_R": 0.082,
+   "fut_R": 0.072,
+   "fut_PF": 1.18,
+   "fut_R_ci95": [
+    -0.047,
+    0.191
+   ],
+   "longs": 287,
+   "shorts": 0,
+   "exits": {
+    "time": 153,
+    "stop": 104,
+    "target": 30
+   }
+  },
+  "short": {
+   "trades": 263,
+   "win_rate": 0.437,
+   "gross_R": 0.001,
+   "fut_R": -0.01,
+   "fut_PF": 0.98,
+   "fut_R_ci95": [
+    -0.137,
+    0.125
+   ],
+   "longs": 0,
+   "shorts": 263,
+   "exits": {
+    "time": 121,
+    "stop": 108,
+    "target": 34
+   }
+  },
+  "random_entry_mean_R": 0.12828121496777675,
+  "random_entry_p95": 0.1714173161218781,
+  "stress": {
+   "trades": 550,
+   "win_rate": 0.475,
+   "gross_R": 0.036,
+   "fut_R": 0.015,
+   "fut_PF": 1.03,
+   "fut_R_ci95": [
+    -0.071,
+    0.103
+   ],
+   "longs": 287,
+   "shorts": 263,
+   "exits": {
+    "time": 274,
+    "stop": 212,
+    "target": 64
+   }
+  }
+ },
+ "all_2023_26": {
+  "trades": 913,
+  "win_rate": 0.473,
+  "gross_R": 0.037,
+  "fut_R": 0.028,
+  "fut_PF": 1.06,
+  "fut_R_ci95": [
+   -0.039,
+   0.095
+  ],
+  "longs": 489,
+  "shorts": 424,
+  "exits": {
+   "time": 472,
+   "stop": 345,
+   "target": 96
+  },
+  "trade1": {
+   "trades": 827,
+   "win_rate": 0.472,
+   "gross_R": 0.048,
+   "fut_R": 0.039,
+   "fut_PF": 1.09,
+   "fut_R_ci95": [
+    -0.031,
+    0.108
+   ],
+   "longs": 436,
+   "shorts": 391,
+   "exits": {
+    "time": 419,
+    "stop": 317,
+    "target": 91
+   }
+  },
+  "trade2": {
+   "trades": 86,
+   "win_rate": 0.488,
+   "gross_R": -0.065,
+   "fut_R": -0.076,
+   "fut_PF": 0.82,
+   "fut_R_ci95": [
+    -0.255,
+    0.112
+   ],
+   "longs": 53,
+   "shorts": 33,
+   "exits": {
+    "time": 53,
+    "stop": 28,
+    "target": 5
+   }
+  },
+  "long": {
+   "trades": 489,
+   "win_rate": 0.513,
+   "gross_R": 0.06,
+   "fut_R": 0.052,
+   "fut_PF": 1.13,
+   "fut_R_ci95": [
+    -0.036,
+    0.139
+   ],
+   "longs": 489,
+   "shorts": 0,
+   "exits": {
+    "time": 272,
+    "stop": 177,
+    "target": 40
+   }
+  },
+  "short": {
+   "trades": 424,
+   "win_rate": 0.427,
+   "gross_R": 0.01,
+   "fut_R": 0.0,
+   "fut_PF": 1.0,
+   "fut_R_ci95": [
+    -0.101,
+    0.103
+   ],
+   "longs": 0,
+   "shorts": 424,
+   "exits": {
+    "time": 200,
+    "stop": 168,
+    "target": 56
+   }
+  }
+ },
+ "2023": {
+  "trades": 280,
+  "win_rate": 0.468,
+  "gross_R": 0.002,
+  "fut_R": -0.009,
+  "fut_PF": 0.98,
+  "fut_R_ci95": [
+   -0.127,
+   0.113
+  ],
+  "longs": 156,
+  "shorts": 124,
+  "exits": {
+   "time": 147,
+   "stop": 108,
+   "target": 25
+  },
+  "trade1": {
+   "trades": 250,
+   "win_rate": 0.456,
+   "gross_R": 0.001,
+   "fut_R": -0.01,
+   "fut_PF": 0.98,
+   "fut_R_ci95": [
+    -0.136,
+    0.122
+   ],
+   "longs": 135,
+   "shorts": 115,
+   "exits": {
+    "time": 127,
+    "stop": 99,
+    "target": 24
+   }
+  },
+  "trade2": {
+   "trades": 30,
+   "win_rate": 0.567,
+   "gross_R": 0.01,
+   "fut_R": -0.003,
+   "fut_PF": 0.99,
+   "fut_R_ci95": [
+    -0.298,
+    0.298
+   ],
+   "longs": 21,
+   "shorts": 9,
+   "exits": {
+    "time": 20,
+    "stop": 9,
+    "target": 1
+   }
+  },
+  "long": {
+   "trades": 156,
+   "win_rate": 0.468,
+   "gross_R": 0.002,
+   "fut_R": -0.008,
+   "fut_PF": 0.98,
+   "fut_R_ci95": [
+    -0.158,
+    0.153
+   ],
+   "longs": 156,
+   "shorts": 0,
+   "exits": {
+    "time": 80,
+    "stop": 62,
+    "target": 14
+   }
+  },
+  "short": {
+   "trades": 124,
+   "win_rate": 0.468,
+   "gross_R": 0.001,
+   "fut_R": -0.011,
+   "fut_PF": 0.97,
+   "fut_R_ci95": [
+    -0.183,
+    0.164
+   ],
+   "longs": 0,
+   "shorts": 124,
+   "exits": {
+    "time": 67,
+    "stop": 46,
+    "target": 11
+   }
+  }
+ },
+ "2024": {
+  "trades": 270,
+  "win_rate": 0.481,
+  "gross_R": 0.086,
+  "fut_R": 0.077,
+  "fut_PF": 1.18,
+  "fut_R_ci95": [
+   -0.053,
+   0.209
+  ],
+  "longs": 131,
+  "shorts": 139,
+  "exits": {
+   "time": 127,
+   "stop": 104,
+   "target": 39
+  },
+  "trade1": {
+   "trades": 244,
+   "win_rate": 0.484,
+   "gross_R": 0.1,
+   "fut_R": 0.09,
+   "fut_PF": 1.21,
+   "fut_R_ci95": [
+    -0.051,
+    0.232
+   ],
+   "longs": 116,
+   "shorts": 128,
+   "exits": {
+    "time": 111,
+    "stop": 96,
+    "target": 37
+   }
+  },
+  "trade2": {
+   "trades": 26,
+   "win_rate": 0.462,
+   "gross_R": -0.041,
+   "fut_R": -0.052,
+   "fut_PF": 0.88,
+   "fut_R_ci95": [
+    -0.394,
+    0.303
+   ],
+   "longs": 15,
+   "shorts": 11,
+   "exits": {
+    "time": 16,
+    "stop": 8,
+    "target": 2
+   }
+  },
+  "long": {
+   "trades": 131,
+   "win_rate": 0.557,
+   "gross_R": 0.176,
+   "fut_R": 0.167,
+   "fut_PF": 1.46,
+   "fut_R_ci95": [
+    -0.007,
+    0.353
+   ],
+   "longs": 131,
+   "shorts": 0,
+   "exits": {
+    "time": 73,
+    "stop": 42,
+    "target": 16
+   }
+  },
+  "short": {
+   "trades": 139,
+   "win_rate": 0.41,
+   "gross_R": 0.001,
+   "fut_R": -0.008,
+   "fut_PF": 0.98,
+   "fut_R_ci95": [
+    -0.192,
+    0.182
+   ],
+   "longs": 0,
+   "shorts": 139,
+   "exits": {
+    "stop": 62,
+    "time": 54,
+    "target": 23
+   }
+  }
+ },
+ "2025": {
+  "trades": 228,
+  "win_rate": 0.487,
+  "gross_R": 0.055,
+  "fut_R": 0.047,
+  "fut_PF": 1.12,
+  "fut_R_ci95": [
+   -0.078,
+   0.181
+  ],
+  "longs": 117,
+  "shorts": 111,
+  "exits": {
+   "time": 128,
+   "stop": 80,
+   "target": 20
+  },
+  "trade1": {
+   "trades": 210,
+   "win_rate": 0.495,
+   "gross_R": 0.081,
+   "fut_R": 0.074,
+   "fut_PF": 1.19,
+   "fut_R_ci95": [
+    -0.061,
+    0.208
+   ],
+   "longs": 109,
+   "shorts": 101,
+   "exits": {
+    "time": 120,
+    "stop": 71,
+    "target": 19
+   }
+  },
+  "trade2": {
+   "trades": 18,
+   "win_rate": 0.389,
+   "gross_R": -0.25,
+   "fut_R": -0.261,
+   "fut_PF": 0.55,
+   "fut_R_ci95": [
+    -0.672,
+    0.212
+   ],
+   "longs": 8,
+   "shorts": 10,
+   "exits": {
+    "stop": 9,
+    "time": 8,
+    "target": 1
+   }
+  },
+  "long": {
+   "trades": 117,
+   "win_rate": 0.556,
+   "gross_R": 0.081,
+   "fut_R": 0.073,
+   "fut_PF": 1.21,
+   "fut_R_ci95": [
+    -0.084,
+    0.237
+   ],
+   "longs": 117,
+   "shorts": 0,
+   "exits": {
+    "time": 75,
+    "stop": 38,
+    "target": 4
+   }
+  },
+  "short": {
+   "trades": 111,
+   "win_rate": 0.414,
+   "gross_R": 0.028,
+   "fut_R": 0.02,
+   "fut_PF": 1.04,
+   "fut_R_ci95": [
+    -0.179,
+    0.22
+   ],
+   "longs": 0,
+   "shorts": 111,
+   "exits": {
+    "time": 53,
+    "stop": 42,
+    "target": 16
+   }
+  }
+ },
+ "2026": {
+  "trades": 135,
+  "win_rate": 0.444,
+  "gross_R": -0.02,
+  "fut_R": -0.025,
+  "fut_PF": 0.94,
+  "fut_R_ci95": [
+   -0.192,
+   0.15
+  ],
+  "longs": 85,
+  "shorts": 50,
+  "exits": {
+   "time": 70,
+   "stop": 53,
+   "target": 12
+  },
+  "trade1": {
+   "trades": 123,
+   "win_rate": 0.439,
+   "gross_R": -0.019,
+   "fut_R": -0.025,
+   "fut_PF": 0.95,
+   "fut_R_ci95": [
+    -0.198,
+    0.159
+   ],
+   "longs": 76,
+   "shorts": 47,
+   "exits": {
+    "time": 61,
+    "stop": 51,
+    "target": 11
+   }
+  },
+  "trade2": {
+   "trades": 12,
+   "win_rate": 0.5,
+   "gross_R": -0.027,
+   "fut_R": -0.033,
+   "fut_PF": 0.89,
+   "fut_R_ci95": [
+    -0.422,
+    0.444
+   ],
+   "longs": 9,
+   "shorts": 3,
+   "exits": {
+    "time": 9,
+    "stop": 2,
+    "target": 1
+   }
+  },
+  "long": {
+   "trades": 85,
+   "win_rate": 0.471,
+   "gross_R": -0.04,
+   "fut_R": -0.046,
+   "fut_PF": 0.9,
+   "fut_R_ci95": [
+    -0.251,
+    0.173
+   ],
+   "longs": 85,
+   "shorts": 0,
+   "exits": {
+    "time": 44,
+    "stop": 35,
+    "target": 6
+   }
+  },
+  "short": {
+   "trades": 50,
+   "win_rate": 0.4,
+   "gross_R": 0.015,
+   "fut_R": 0.01,
+   "fut_PF": 1.02,
+   "fut_R_ci95": [
+    -0.273,
+    0.315
+   ],
+   "longs": 0,
+   "shorts": 50,
+   "exits": {
+    "time": 26,
+    "stop": 18,
+    "target": 6
+   }
+  }
+ },
+ "verdict": "PASS (2023-24: 550 trades, +0.033R after costs)",
+ "data": {
+  "files": [
+   "US100_M1_2022_2025.csv",
+   "US100_M1_2025_2026.csv"
+  ],
+  "first": "2022-09-27",
+  "last": "2026-10-16"
+ }
+}

@@ -797,7 +797,7 @@ not a durable edge. H-006/H-009 closed; no MT5 bot.
 
 ## H-010: New York opening-range break, entry on the break close, up to two trades a day
 
-**Registered:** 2026-10-18, before any H-010 run.  **Status:** OPEN (waiting for the US100 M1 export)
+**Registered:** 2026-10-18, before any H-010 run.  **Status:** PASSED the registered bar, weakly (2026-10-18)
 
 **Idea.** In the H-008 final test, random entries in V3's directions earned the same as the retest entry (+0.108R vs
 +0.105R gross). So the value is in the *direction* of the 15-minute opening-range break, not in the retest. H-010 drops
@@ -819,8 +819,17 @@ round trip (futures estimate).
 year, random-entry comparison, stress (stop 1 point worse, costs doubled).
 **Caveats, stated now.** This bar is lower than H-008's (PF ≥ 1.2, ≥ +0.10R, beat random), and 2023-24 is not unseen:
 it was in H-008's final test. A pass here means "worth a demo", not "proven". **Budget:** one run; no changes after.
-### Results
+### Results (2026-10-18, run once), after futures costs
+Data check first: the two exports reproduce H-008 V3 exactly (final 501 trades, +0.1047R gross, 251/250; second 72, −0.1031R).
+**2023-24 (judged): 550 trades, win 47.5%, +0.033R (PF 1.08, 95% −0.05 to +0.12) → PASS by the registered bar.**
+Stress +0.015R. Trade 1: 494, +0.040R. **Trade 2: 56, −0.026R.** Longs 287, +0.072R; shorts 263, −0.010R.
+Exits: 274 at 12:00, 212 stop, 64 target. **Random entry (same days, directions, bracket): +0.128R gross vs the rule's
++0.043R** (rule below the random mean).
+By year: 2023 −0.009R (280); 2024 +0.077R (270); 2025 +0.047R (228); 2026 −0.025R (135). All 2023-26: 913, +0.028R.
+Trade 2 is negative in every year (all years 86 trades, −0.076R).
+Compared with V3 on 2023-01→2025-06 (+0.095R after costs), entering on the break close and closing at 12:00 earned less.
 ### Decision
+Pending (Tino).
 
 ---
 
