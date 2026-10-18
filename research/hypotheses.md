@@ -23,6 +23,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-013 | H-011 + earlier-day zones only | failed | beat random before costs, −0.04R after |
 | H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
 | H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
+| H-018 | BOS model (break of structure, zone tap, 2R) | open | |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
@@ -1152,6 +1153,25 @@ no Fridays; 1% risk. Differences from the backtest, stated now: live bid candles
 any real money. Win rate < 45% → the 49% was luck; close. In between → continue to 300.
 Honest power: at 150 trades the win rate is known to about ±8 points (95%), so a single checkpoint cannot prove 49% vs 45%.
 **Records:** `MQL5/Files/LK_journal.csv`, sent to Claude monthly; Tino's manual journal runs alongside it.
+### Results
+### Decision
+
+---
+
+## H-018: The BOS model (break of structure) on its own
+
+**Registered:** 2026-10-18 (Mon 19 Oct), before any BOS statistics.  **Status:** OPEN
+**Why.** Tino wants to try the community's BOS model. It was coded as H-007/1 variant V2 but never measured: H-007
+stopped at its gate (registered on V0) before any statistics; V2's only trace was a +2R long on 2026-10-05.
+**Rules (h007.py V2, unchanged; driver `research/h018.py`).** US100 5-minute bars, NY time. A 5-minute close beyond the
+highest high (lowest low) of the previous 6 bars sets the direction; zone = the most recent opposite-colour bar of those 6;
+limit order at its near edge, valid 30 minutes, cancelled by a 5-minute close through the zone; stop beyond the far edge
+± 0.25 (risk limits as H-007); target 2R. Fills 08:00-11:00 NY except 09:57-10:03; one position; ≤ 2 trades a day;
+flat 12:00. Futures-estimate costs 0.5625 points per round trip.
+**Development** 2025-07-01→2026-03-31, seen once, no changes after. **Final, once:** 2023-01-01→2025-06-30, only if the
+development futures expectancy is above zero (that period was used by other rules, not by BOS: near-clean).
+**Pass (final):** ≥ 100 trades; PF ≥ 1.2 and ≥ +0.10R after futures costs; mean R above the 95th percentile of random
+entries (same days, directions, stop and target). **Tries:** 18th registered hypothesis.
 ### Results
 ### Decision
 
