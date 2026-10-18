@@ -497,6 +497,28 @@ highest, and Q4's holdout pass rule is unchanged. Alignment rule tightened for 1
 requiring the five entry prices, in order, to be touched by US100 mid within 09:30–10:30 with 6.25-point wins after each; if more
 than one solution exists within 1.5 points of basis, 10-23 is used only for Q2 and dropped from Q1/Q3.
 
+**Amendment H-005/2 (2026-10-18, after Q1-Q3, before any Q4 run on development or holdout data).**
+Data received: FP Markets US100 real ticks 09:00-11:45 NY, 2025-07-01 to 2026-10-16 (337 days, 84.2 M ticks; density changes
+in March 2026 and mid-August 2026), converted to 1-second bid/ask bars. Server = NY + 7 h confirmed on all four of her days.
+Alignment outcome: 11-03 (premium 97-105) and 10-31 (premium 109-124) align; 10-23 has feasible premiums 138.5-150 with
+different times (dropped from Q1/Q3 by the H-005/1 rule; every solution places her trades 10:37-11:29); 10-01 cannot be aligned.
+Q1-Q3 used 8 trades on 2 days. In Q3 the coded H-004 rejection fired on 0 of 8 of her trades and on 11-03 the H-004
+zone definition finds no zones, so H-004 V1 does not describe what she does. Two rules go to Q4, fixed now:
+- **Q4a (as H-005/1 said):** H-004 V1 (15-second candles, zones/rejection/break, 6.25/6.25, 15-min cap, ≤4 trades, stop after
+  2 losses, no Fridays) plus the L1 model's top three features with thresholds that keep all 8 of her trades:
+  minutes since 09:30 ≤ 11 (binding); zone distance ≤ 10 ATR and EMA side ∈ {−1,+1} (not binding). So: H-004 V1, entries 09:30-09:41.
+- **Q4b (the original H-005 "≤3 features" clone, from the univariate ranking):** direction = London bias (London 03:00-08:00
+  high taken before 09:30 and low not → short only; low taken and high not → long only; otherwise no trade);
+  entries only 09:30-09:41; entry at the close of any 15-second candle that closes beyond the previous candle in that
+  direction (her stated "break" entry); fill at the next second's mid; same bracket, cap, one position at a time,
+  ≤4 trades a day, stop after 2 losses; Fridays traded (she trades them).
+Development run first (2025-07-01→2026-03-31, may be looked at, no changes allowed after looking except bug fixes),
+then each rule runs **once** on the holdout (2026-04-01→2026-10-16).
+**Holdout pass, per rule:** ≥100 trades; on the futures-cost estimate (gross − 0.09R) PF ≥ 1.2 and expectancy ≥ +0.10R;
+and mean R above the **97.5th** percentile of a random-entry null (two rules → Bonferroni), where the null keeps each day's
+trade count and directions and draws entry seconds uniformly from 09:30-09:41 on the same days.
+If a rule cannot reach 100 trades it fails criterion 1 and is reported as such.
+
 ---
 
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour

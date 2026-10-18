@@ -1,0 +1,14 @@
+{
+ "09:30-11:00 (registered)": {
+  "null_mean": 0.00445,
+  "null_p95": 0.5,
+  "her_percentile": 0.8539,
+  "her_mean_R": 0.3612071300512053
+ },
+ "09:30-09:45 (descriptive)": {
+  "null_mean": 0.14435,
+  "null_p95": 0.75,
+  "her_percentile": 0.7407,
+  "her_mean_R": 0.3612071300512053
+ }
+}
