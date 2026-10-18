@@ -24,6 +24,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
 | H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
 | H-018 | BOS model (break of structure, zone tap, 2R) | failed | −0.14R after costs; worse than random (4th pct) |
+| H-019 | Build-up breakout at levels, with trend, 2R | registered | dev run pending |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
@@ -1233,3 +1234,19 @@ Template for the next one:
 ### Results
 ### Decision
 -->
+
+
+## H-019: Build-up breakout at support/resistance, in the trend direction
+Registered 2026-10-18, before any data was run. Code: research/h019.py. US100 1-minute bars, New York time.
+
+**Rules**
+- Trend: last closed 15-minute bar. Close above a 20 EMA that is higher than 4 bars ago = up; mirrored = down; otherwise no trade.
+- Levels: previous day's 09:30–16:00 high and low; Asia (20:00–03:00) high and low after 03:00; London (03:00–09:00) high and low after 09:00.
+- Build-up: the last 4 five-minute candles span at most 0.75 × ATR(14, 5-minute). For longs the build-up high sits between 0.5 ATR below a level and 0.1 ATR above it (shorts mirrored).
+- Entry: stop order 0.25 beyond the build-up, valid for 3 five-minute bars. Cancelled if a 5-minute candle closes beyond the other side.
+- Stop 0.25 beyond the other side; at least 5 points. Target 2R.
+- Time (made flexible on 18 Oct): new orders 03:00–15:30 NY, flat by 16:00, at most 2 trades a day, weekdays only.
+- Costs: 0.5625 points per round trip. Stress test: 0.25 stop slippage plus double costs.
+
+**Pass (development 2025-07 to 2026-03, run once):** at least 100 trades; after-cost profit factor ≥ 1.2; expectancy ≥ +0.10R; gross R above the 95th percentile of random entries (same days, direction and stop); stress expectancy > 0.
+**Final run** (2023-01 to 2025-06), once, only if development expectancy after costs is above zero.
