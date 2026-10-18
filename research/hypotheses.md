@@ -932,7 +932,7 @@ again; re-open only with her full broker trade history.
 
 ## H-013: H-012 without rule 2 (earlier-day zones only)
 
-**Registered:** 2026-10-18, after H-012's development result was seen, before any H-013 run.  **Status:** OPEN
+**Registered:** 2026-10-18, after H-012's development result was seen, before any H-013 run.  **Status:** FAILED development (2026-10-18)
 **Rules:** H-012 with rule 2 removed: only fair value gaps formed before 00:00 NY of the trading day (up to 5 trading
 days back); everything else as H-011/H-012. Code: `research/h013.py` (h012.py with the opening-move filter off).
 **Why:** Tino's choice; rule 2 was the one that conflicted with her 23 Oct trades.
@@ -940,8 +940,15 @@ days back); everything else as H-011/H-012. Code: `research/h013.py` (h012.py wi
 09:30-09:45), so development can only stop H-013, not support it. The test 2026-04-01→2026-10-16 (unused by any
 H-011..H-013 rule) runs once, only if development futures-estimate expectancy > 0. Pass rules as H-011.
 **Tries:** 13th registered hypothesis; 3rd variant of her zone + rejection method (H-011, H-012, H-013).
-### Results
-### Decision
+### Results (2026-10-18)
+**Development, run once (2025-07-01→2026-03-31):** 401 trades on 114 days, win 52.9%, gross **+0.054R**, futures
+estimate **−0.036R** (PF 0.93, 95% −0.13 to +0.06), stress −0.15R. Random entries (same days, directions, bracket):
+mean −0.035R gross, 95th percentile +0.045R → the rule's gross result is at the **96.6th percentile** (above random
+timing, before costs). Signals 09:30-09:45: 177 trades, −0.005R after costs; later: 224 trades, −0.06R.
+Caveat: this period was already seen through H-012 and rule 2 was removed after that, so the percentile is mildly flattered.
+### Decision (2026-10-18): FAIL at development — expectancy after costs below zero, so the 2026-04→10 test is not spent.
+For the first time in H-004..H-013 the entry timing beats random entries before costs (+0.054R, about +0.09R better
+than random), but the 25-tick bracket's cost (0.09R) is larger than the edge: the same pattern as H-006.
 
 ---
 
