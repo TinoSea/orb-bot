@@ -22,6 +22,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-012 | H-011 + 2 selection rules | failed | −0.07R after costs |
 | H-013 | H-011 + earlier-day zones only | failed | beat random before costs, −0.04R after |
 | H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
+| H-016 | Her zones + her own bracket (12.5/16.25) | open | run once on 2023-25 |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
 ---
@@ -1095,6 +1096,27 @@ The EA's own limits (2% day, 5% week, 15% kill switch) stay on.
 **Record keeping.** `MQL5/Files/MS_journal.csv` (every fill) sent to Claude monthly; a weekly review with
 `research/reviews/TEMPLATE.md`; monthly reconciliation: the Python replica on the same dates must reproduce ≥ 90% of the
 bot's trades (otherwise find out why before going on). Any rule change ends H-015 and starts a new hypothesis.
+### Results
+### Decision
+
+---
+
+## H-016: Her zone entries with the bracket from her own trade boxes (12.5 / 16.25 points)
+
+**Registered:** 2026-10-18, before any H-016 run on 2023-2025 data.  **Status:** OPEN
+**Why.** Her short videos (Oct 2025) show TradingView position boxes: stops 12.5-17.25 points (50-69 ticks), targets
+16.5-18.75, risk/reward 1.14-1.71; the 25-tick bracket of H-011..H-013 was not what she uses. Her captioned 20-EMA rule
+was broken on 2 of 3 checkable trades (17 Oct short above the EMA on 1/5/15-minute bars; 15 Oct long below it), so it
+is not included.
+**Rules:** exactly H-013 (fair value gaps ≥ 5 points on 5/15-minute bars from earlier days only, 15-second rejection
+candle, stop entry 1 tick beyond it for 45 s, entries 09:30-11:30 except 09:57-10:03, 15-minute cap, flat 11:45, ≤ 7
+trades, stop after 2 losses, no Fridays), with **stop 12.5 points and target 16.25 points (1.3R)**. Code:
+`research/h016.py`. Costs 0.5625 points = 0.045R; stress: stops 0.25 worse, costs doubled.
+**Run once on 2023-01-01→2025-06-30** (US100 ticks 09:00-11:45 NY from `ExportTicks2023.mq5`; no H-011..H-016 rule has
+been run on it; H-009 used it for different rules, so near-clean). No development run.
+**Pass:** ≥ 100 trades; futures-estimate PF ≥ 1.2 and expectancy ≥ +0.10R; mean R above the 95th percentile of the
+random-entry null; stress expectancy > 0. Pass → demo practice with this bracket, not money.
+**Tries:** 16th registered hypothesis; 5th variant of her zone method; the last clean period for it.
 ### Results
 ### Decision
 
