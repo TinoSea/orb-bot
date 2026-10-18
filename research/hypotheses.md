@@ -696,7 +696,7 @@ Any further BPB/BOS work needs a new registration (H-008) with an explicit selec
 
 ## H-008: Opening-range break-and-retest on Nasdaq (a member's written rule)
 
-**Registered:** 2026-10-18, before any H-008 code existed.  **Status:** OPEN
+**Registered:** 2026-10-18, before any H-008 code existed.  **Status:** FAILED final test (2026-10-18)
 
 **Source.** A member (Keisha) of La'Kera's community, in her own words: range = the session's opening candle
 (Asia: the 1-hour candle 18:00-19:00 New York, "Asia is less volatile"; New York: 15-minute 09:30-09:45); wait for it to
@@ -744,6 +744,11 @@ stress −0.12R. Descriptive only (does not change the final variant): her own r
 win 32%, −0.05R (PF 0.92), 33rd percentile vs random.
 **Status:** the registered final test (V3, once, 2023-01→2025-06) still needs the 2023-2025 export; given the secondary
 result a pass is unlikely. No MT5 bot unless the final test passes.
+**Final test, run once (2023-01-01→2025-06-30), V3:** 501 trades, win 42.5%, futures estimate **+0.095R** (PF 1.18,
+95% −0.01 to +0.21), stress +0.08R; **random entries (same sessions, directions, bracket): +0.108R — 46th percentile.**
+**Decision: FAIL.** The small profit is what any entry at those times and directions earned in 2023-2025; the
+opening-range break-and-retest adds nothing over random timing. Data: FP Markets US100 2022-10-03→2025-06-30
+(707 days, 46.97 M ticks, 971,859 M1 bars; clock checked; 9 holidays missing).
 
 ---
 
