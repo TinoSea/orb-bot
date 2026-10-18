@@ -747,6 +747,30 @@ result a pass is unlikely. No MT5 bot unless the final test passes.
 
 ---
 
+## H-009: H-006 entries, traded so that costs are a small share of each trade
+
+**Registered:** 2026-10-18, before any H-009 run.  **Status:** OPEN
+
+**Problem.** H-006 V0 entries win ~55% at 6.25/6.25 (+0.09-0.10R before costs in both periods, a plateau across zone
+settings), but the futures cost (0.5625 points ≈ $11 per NQ round trip) is 0.09R at a 6.25-point stop. The 4/25 exit
+(H-006/1) scored +0.09R out of sample and failed under slippage. H-009 keeps the entries and widens the trade.
+**Entries:** H-006 V0 unchanged (zones D/H4/H1, failed-extreme stop entry, 09:30-11:30, news blackout, ≤4 trades,
+stop after 2 losses). One position at a time; 15-minute cap replaced by flat at 11:45.
+**Variants (all four fixed now):**
+- **A** stop 12.5 / target 25 points (cost 0.045R).
+- **B** stop 0.5 × ATR(14) of M15 at entry, target 2 × stop; skip if the stop is under 6 or over 40 points.
+- **C** stop 8 / target 20 points.
+- **D** as A, but only trades from **daily** zones (the time frame that was best in both H-006 periods).
+**Development** 2025-07-01→2026-03-31: pick the highest futures-estimate expectancy with ≥ 40 trades. (Note: the
+H-006 exit map already showed development numbers for brackets like A and C; development is allowed to be seen.)
+Apr-Oct 2026 is reported only descriptively (already used twice).
+**Confirmation, once, on 2023-01-01→2025-06-30** (never used; needs a tick export from 2022-10-01, see below).
+**Pass:** ≥ 100 trades; futures estimate PF ≥ 1.2 and expectancy ≥ +0.10R; mean R above the 95th percentile of a
+random-entry null (same days, directions, bracket); stress (target trades through by 0.25, stop 0.5 worse, costs
+doubled) expectancy > 0. Pass → MT5 bot → 2-3 months demo on NQ/MNQ costs.
+
+---
+
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
