@@ -595,6 +595,21 @@ but the 0.09R futures cost (≈ $11 per NQ round trip on a 6.25-point stop) take
 registration: (a) replicate H-006 V0 unchanged on 2023-01→2025-06 real ticks (never used for any H-006 rule) to see if the
 gross edge is real; only then (b) a cost-reducing bracket (wider stop/target) or daily-zone-only, tested forward.
 
+
+**Amendment H-006/1 (2026-10-18): exit study and one confirmatory test, registered before the run.**
+Development only (2025-07-01→2026-03-31, V0 entries): an exit map over stops 4-12.5 and targets 4-25 points; the pick
+rule (best neighbourhood-smoothed cell) was written in the code before the map was seen → **stop 4.0 / target 25.0 points**
+(raw +0.43R, smoothed +0.36R on the futures estimate). Control: random entries, same days and directions, same bracket:
+−0.12R. Zone settings (impulse 1.25/1.5/1.75 × ATR, look-back ×0.5/1/2) all +0.04 to +0.13R gross at 6.25/6.25 (a plateau).
+Caveats: the pick is a grid corner; 48 cells were compared; a 4-point stop is sensitive to slippage.
+**Rule H-006/X:** H-006 V0 entries unchanged; exit stop 4.0 / target 25.0 points, 15-minute cap, flat 11:45; the
+full rule is simulated (one position at a time, so trade count changes).
+**Test, once, on 2026-04-01→2026-10-16** (seen before only as V0 at 6.25/6.25). **Pass:** ≥ 100 trades; futures
+estimate (0.5625 points per round trip) PF ≥ 1.2 and expectancy ≥ +0.10R; mean R above the 95th percentile of a
+random-entry null (same days, directions and bracket, entry seconds uniform in 09:30-11:30 outside 09:57-10:03); and
+a **stress case** (target must trade through by 0.25, stop fills 0.25 worse, costs doubled) with expectancy > 0.
+A pass leads to one more run, unchanged, on 2023-01→2025-06 ticks (never used), then an MT5 demo.
+
 ---
 
 ## H-007: New York X bias + BPB / BOS entries on 5-minute bars (her full framework)
