@@ -350,6 +350,58 @@ gold** (other markets still use the ExportSpreads calibration). The out-of-sampl
 
 ---
 
+## H-004: Supply/demand rejection scalp at the New York open (Nasdaq)
+
+**Registered:** 2026-10-18  **Status:** OPEN (before any data was looked at)
+
+**Idea.** Source: a "trade with me" video by a futures trader (Nasdaq futures, 16 contracts, 25-tick target,
+~$2,000 risk to make ~$2,000, 7 winners in one session, average hold 48 seconds). Before the open she marks
+supply and demand zones. After the open, when price reaches a zone and prints a rejection candle, she enters on
+the break of that candle and takes a fixed 25-tick bracket. Her version is discretionary ("depending on how far I
+feel"); this is a **mechanical approximation** so it can be tested. Failing rejects *this rule set*, not her.
+
+**Exact rules tested** (code: `mt5/SD_Scalp.mq5`)
+- **Market:** US100 (FP Markets' Nasdaq 100 CFD, the index NQ futures follow). New York time throughout.
+- **Zones, fixed at 09:30:** on 15-minute bars from 18:00 the previous evening to 09:30, an *impulse* candle has a
+  body ≥ 1.5 × ATR(14, M15) and ≥ 60% of its range. The candle before it is the zone (its low to its high):
+  **demand** if the impulse is up, **supply** if down. A zone is dropped if any later 15-minute close (before 09:30)
+  goes through its far side. The 6 most recent surviving zones of each kind are kept.
+- **Signal (1-minute bars, 09:30–11:00):** **sell** when a closed 1-minute bar's high reaches into a supply zone,
+  the bar is bearish, and it closes below the zone's low (a rejection). The trigger is 1 tick below that bar's low.
+  **Buy** is the mirror at demand. A trigger stays armed for 3 bars.
+- **Entry:** market order when price crosses the trigger. **Stop and target: 6.25 index points each (25 NQ ticks), 1:1.**
+- Each zone trades once. A 1-minute close through a zone's far side removes it.
+- **Limits:** one position at a time; at most 4 trades a day; stop for the day after 2 losses; no new entries after
+  11:00; everything flat by 11:30 or after 15 minutes in a trade; **no Friday trading** (her rule).
+- **Skip** an entry if the spread is above 30% of the stop. **Risk:** 1% per trade. Same live-account guard,
+  research mode and out-of-sample lock as MS_Gold.
+
+**Data.** FP Markets US100 in the MT5 Strategy Tester, **"Every tick based on real ticks" only** (48-second trades
+cannot be judged on 1-minute bars). In-sample **2023-01-01 → 2025-06-30**; out-of-sample **2025-07-01 → 2026-10-16**,
+run once. No Python replica is possible without tick data, so Gate 0 here is an audit: the bot logs every zone and
+signal, and the first 20 trades are checked by hand against the chart.
+
+**Costs — the first hurdle, stated before testing.** FP Markets' stored US100 spread is ~1.25 points, already
+**20% of a 6.25-point stop**, double the 10% cost limit used in H-002. On NQ futures her own figures ($645
+commission for 112 contract-sides, about $5.76 per contract round trip, plus a 1-tick spread) come to about
+**0.09R per trade**. So results are reported three ways: (1) after CFD costs as tested, (2) **gross** (spread added
+back), and (3) gross minus 0.09R, an estimate of futures costs. If the edge only exists in (2), there is no edge.
+
+**Pass, all on the out-of-sample period** (decided now)
+1. At least 100 trades
+2. **Futures-cost estimate (3):** profit factor ≥ 1.2 and expectancy ≥ +0.10R per trade
+3. Win rate at least 5 points above break-even after costs (break-even for 1:1 with cost c is (1+c)/2)
+4. Max drawdown ≤ 20% at 1% risk
+5. **Robust:** zones from 5-minute instead of 15-minute bars, and a 50-tick (12.5-point) target, keep profit factor ≥ 1.05 on (3)
+6. **Beats random:** better than the 95th percentile of random entries in the same window with the same bracket
+   (1,000 runs, computed from the tester's trade times)
+
+**Fail:** profit factor below 1.05 on (3), or 5–6 collapse. **Budget:** 10 in-sample variants.
+**Even if it passes on (3),** it is only tradable on real futures (another platform and a rewrite), since the CFD
+costs in (1) are part of the test.
+
+---
+
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
