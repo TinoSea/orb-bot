@@ -397,6 +397,24 @@ back), and (3) gross minus 0.09R, an estimate of futures costs. If the edge only
    (1,000 runs, computed from the tester's trade times)
 
 **Fail:** profit factor below 1.05 on (3), or 5–6 collapse. **Budget:** 10 in-sample variants.
+
+**Amendment H-004/1 — 2026-10-18, before any H-004 data or results exist.** Six more of her videos show three
+things the registered rules leave out: she enters on the **15-second** chart (trades last 16–48 seconds), she
+uses the **London session high/low** and an **EMA** for direction, and she **avoids consolidation**. Her exact
+EMA and London times are never stated, so the definitions below are ours, fixed now. Variants (inputs in `SD_Scalp.mq5` v1.10):
+- **V0** as registered (1-minute entry candles, no filters).
+- **V1 15-second candles:** entry candles of 15 seconds, built by the bot from real ticks (bid). Rejection, break
+  and zone-breaking rules unchanged; a trigger stays armed for 3 candles.
+- **V2 EMA direction:** buys only if the last closed 15-minute close is above EMA(20) of 15-minute closes; sells only below.
+- **V3 London sweep:** London range = high/low of 03:00–08:00 New York. From 08:00, if price has traded above the
+  London high but not below the low, sells only; below the low but not above the high, buys only; otherwise both.
+  (She called a bearish bias after price went above the London high.)
+- **V4 No consolidation:** no new signal when the high-low range of the last 30 one-minute bars is under 1.0 × ATR(14, 15-minute).
+- **V5 Her version:** V1 + V2 + V3 + V4 together.
+Together with the two registered robustness runs (5-minute zones, 50-tick target) that is 8 of the 10-variant budget.
+**Selection:** the variant with the highest in-sample expectancy on the futures-cost estimate (3) is the one run
+out-of-sample; all six are reported, and the pass rules above apply to it unchanged. Not modelled: her news
+filter (the tester has no news calendar), trailing winners, and her variable position size, which a bot must not copy.
 **Even if it passes on (3),** it is only tradable on real futures (another platform and a rewrite), since the CFD
 costs in (1) are part of the test.
 
