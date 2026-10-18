@@ -694,6 +694,40 @@ Any further BPB/BOS work needs a new registration (H-008) with an explicit selec
 
 ---
 
+## H-008: Opening-range break-and-retest on Nasdaq (a member's written rule)
+
+**Registered:** 2026-10-18, before any H-008 code existed.  **Status:** OPEN
+
+**Source.** A member (Keisha) of La'Kera's community, in her own words: range = the session's opening candle
+(Asia: the 1-hour candle 18:00-19:00 New York, "Asia is less volatile"; New York: 15-minute 09:30-09:45); wait for it to
+close; on the 5-minute chart wait for a break, then a retest, and enter; NQ stop 37.5 / target 75 points (2:1) on both
+dated August trades; one trade a day; holds overnight. Different from H-001 (S&P 500, entry on the breakout bar, stop at
+the far side of the range, −0.32R): here the entry waits for the retest and the market is Nasdaq.
+
+**Exact rules.** US100 1-minute bars, New York time. Range = high/low of the opening window. After it closes, on closed
+5-minute bars: a close above the range high (below the low) is a *break* and sets the direction; a later break of the
+other side replaces it. While a break is live, a limit order rests at the broken edge (buy at the range high / sell at
+the range low); it fills when a 1-minute bar trades to it (fill at the edge, or the open if it gapped through). The fill
+bar checks only the stop; a 1-minute bar touching stop and target counts as a loss. One trade per session.
+Entry windows: Asia 19:00-01:00; New York 09:45-11:30. Flat at 15:55 New York (Asia trades: the next day).
+- **V0** Asia 1-hour range, stop 37.5 / target 75 points. **V1** New York 15-minute range, 37.5 / 75.
+- **V2** Asia, stop at the far side of the range (range height), target 2 × that. **V3** New York, same as V2.
+  V2/V3 skip ranges under 5 or over 150 points.
+Costs: futures estimate 0.5625 points per round trip. **Stress case:** target must trade through by 0.25, stop fills
+1.0 point worse (thin overnight books), costs doubled.
+
+**Gate (before any statistics).** 2026-08-12 (Wed evening session): V0 must fill a **long at the Asia range high**
+between 21:35 and 22:05 New York (her entry: the 20:50 Central = 21:50 New York 5-minute candle, at the ORB high
+29,832 in futures). If it does not, fix bugs only; if it still does not, H-008 stops.
+
+**Development** 2025-07-01→2026-03-31: pick the variant with the highest futures-estimate expectancy (min 60 trades).
+Secondary check of the pick on 2026-04-01→2026-10-16. **Final test, once:** 2023-01-01→2025-06-30 (never used).
+**Pass (final):** ≥ 100 trades; PF ≥ 1.2 and expectancy ≥ +0.10R after futures costs; mean R above the 95th percentile
+of a random-entry null (same sessions, directions and bracket; entry minute uniform in the entry window); stress
+expectancy > 0. Pass → MT5 bot → 2-3 months demo.
+
+---
+
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
