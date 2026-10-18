@@ -1,17 +1,17 @@
 label,commission_usd_per_lot_side,basis,spread_mult,spread_mult_basis
-US500,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-US100,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-US30,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-UK100,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-GER40,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-JP225,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-BOND,0.0,Bond CFD: spread only (to confirm),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-EURUSD,3.0,Raw account: USD 3.00 per lot per side (compareforexbrokers.com FP Markets review),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-USDJPY,3.0,Raw account: USD 3.00 per lot per side,1.0,not yet calibrated (ExportSpreads.mq5 pending)
-GBPUSD,3.0,Raw account: USD 3.00 per lot per side,1.0,not yet calibrated (ExportSpreads.mq5 pending)
-AUDUSD,3.0,Raw account: USD 3.00 per lot per side,1.0,not yet calibrated (ExportSpreads.mq5 pending)
-XAUUSD,3.0,Raw metals: USD 3.00 per lot per side - confirmed by the Gate 0 tester run (2026-10-18),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-XAGUSD,3.0,Raw metals: assumed same as FX - to confirm,1.0,not yet calibrated (ExportSpreads.mq5 pending)
-WTI,0.0,Commodity CFD: spread only (to confirm),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-BTCUSD,0.0,Crypto CFD: spread only (to confirm),1.0,not yet calibrated (ExportSpreads.mq5 pending)
-AGRI,0.0,Soft commodity CFD: spread only (to confirm),1.0,not yet calibrated (ExportSpreads.mq5 pending)
+US500,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,"median tick/bar spread at in-session hour opens, 386 hours"
+US100,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,"median tick/bar spread at in-session hour opens, 386 hours"
+US30,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,"median tick/bar spread at in-session hour opens, 386 hours"
+UK100,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,"median tick/bar spread at in-session hour opens, 576 hours"
+GER40,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),1.0,"median tick/bar spread at in-session hour opens, 585 hours"
+JP225,0.0,FP Markets index CFDs: spread only (to confirm in tester journal),2.33,"median tick/bar spread at in-session hour opens, 390 hours"
+BOND,0.0,Bond CFD: spread only (to confirm),1.0,"median tick/bar spread at in-session hour opens, 356 hours"
+EURUSD,3.0,Raw account: USD 3.00 per lot per side (compareforexbrokers.com FP Markets review),1.0,"median tick/bar spread at in-session hour opens, 908 hours"
+USDJPY,3.0,Raw account: USD 3.00 per lot per side,2.5,"median tick/bar spread at in-session hour opens, 908 hours"
+GBPUSD,3.0,Raw account: USD 3.00 per lot per side,2.0,"median tick/bar spread at in-session hour opens, 908 hours"
+AUDUSD,3.0,Raw account: USD 3.00 per lot per side,2.0,"median tick/bar spread at in-session hour opens, 908 hours"
+XAUUSD,3.0,Raw metals: USD 3.00 per lot per side - confirmed by the Gate 0 tester run (2026-10-18),1.1,"median tick/bar spread at in-session hour opens, 581 hours"
+XAGUSD,3.0,Raw metals: assumed same as FX - to confirm,1.38,"median tick/bar spread at in-session hour opens, 581 hours"
+WTI,0.0,Commodity CFD: spread only (to confirm),2.0,"median tick/bar spread at in-session hour opens, 389 hours"
+BTCUSD,0.0,Crypto CFD: spread only (to confirm),1.0,"median tick/bar spread at in-session hour opens, 1466 hours"
+AGRI,0.0,Soft commodity CFD: spread only (to confirm),1.0,"median tick/bar spread at in-session hour opens, 252 hours"
