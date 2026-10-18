@@ -4,6 +4,7 @@
 |---|---|---|---|
 | `ORB_US500.mq5` | H-001 opening-range breakout | US500 | M5 |
 | `MS_Gold.mq5` | H-002 4H market structure + 1H pullback | XAUUSD (gold) | **H1** |
+| `SD_Scalp.mq5` | H-004 supply/demand rejection scalp at the NY open | US100 (Nasdaq) | **M1** |
 
 Both share the same safety system: % risk sizing, daily/weekly loss limits, kill switch,
 refuses real-money accounts unless `AllowLive` is on, phone alerts and a CSV journal.
@@ -101,6 +102,27 @@ The Friday cutoff can be tested exactly: `python research/ms_replica.py ... --fr
 
 Exact replica of the small-account rules on the raw bars (instead of the quick trade-list replay):
 `python research/ms_replica.py --data data/export --label XAUUSD --tf M1 --from 2023-01-01 --to 2025-06-30 --deposit 200 --min-lot-cap 5 --leverage 100 --max-margin-pct 50 --variant SA-P3 --no-log`
+
+---
+
+## H-004 quick start: SD_Scalp (Nasdaq scalp from the video)
+
+1. MetaEditor → File → New → Expert Advisor → name **SD_Scalp** → paste `mt5/SD_Scalp.mq5` → **Compile** (0 errors).
+   The tester log should start with "SD_Scalp version 1.00".
+2. Strategy Tester:
+
+| Setting | Value |
+|---|---|
+| Expert | SD_Scalp |
+| Symbol / Timeframe | **US100**, **M1** |
+| Date | **2023.01.01 → 2025.06.30** (the bot also stops itself at 2025.07.01) |
+| Modelling | **Every tick based on real ticks** (required: trades last about a minute) |
+| Forward | **No** |
+| Deposit / Leverage | 5000 USD, 1:20 |
+| Inputs | Defaults |
+
+3. Send Claude the log. Every zone, signal, entry and exit is printed so the first trades can be audited
+   against the chart, and SD_journal.csv records the spread paid on every entry and exit.
 
 ---
 
