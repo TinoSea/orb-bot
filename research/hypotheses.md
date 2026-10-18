@@ -22,7 +22,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-012 | H-011 + 2 selection rules | failed | −0.07R after costs |
 | H-013 | H-011 + earlier-day zones only | failed | beat random before costs, −0.04R after |
 | H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
-| H-016 | Her zones + her own bracket (12.5/16.25) | open | run once on 2023-25 |
+| H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
 ---
@@ -1103,7 +1103,7 @@ bot's trades (otherwise find out why before going on). Any rule change ends H-01
 
 ## H-016: Her zone entries with the bracket from her own trade boxes (12.5 / 16.25 points)
 
-**Registered:** 2026-10-18, before any H-016 run on 2023-2025 data.  **Status:** OPEN
+**Registered:** 2026-10-18, before any H-016 run on 2023-2025 data.  **Status:** FAILED (2026-10-18)
 **Why.** Her short videos (Oct 2025) show TradingView position boxes: stops 12.5-17.25 points (50-69 ticks), targets
 16.5-18.75, risk/reward 1.14-1.71; the 25-tick bracket of H-011..H-013 was not what she uses. Her captioned 20-EMA rule
 was broken on 2 of 3 checkable trades (17 Oct short above the EMA on 1/5/15-minute bars; 15 Oct long below it), so it
@@ -1117,8 +1117,17 @@ been run on it; H-009 used it for different rules, so near-clean). No developmen
 **Pass:** ≥ 100 trades; futures-estimate PF ≥ 1.2 and expectancy ≥ +0.10R; mean R above the 95th percentile of the
 random-entry null; stress expectancy > 0. Pass → demo practice with this bracket, not money.
 **Tries:** 16th registered hypothesis; 5th variant of her zone method; the last clean period for it.
-### Results
-### Decision
+### Results (2026-10-18, run once at 685b943)
+**2023-01-01→2025-06-30 (643 tick days, Fridays excluded): 1,025 trades on 363 days, win 45.1% (break-even after costs
+45.4%), gross +0.029R, futures estimate −0.016R (PF 0.97, 95% −0.08 to +0.05), stress −0.072R → FAIL** (PF,
+expectancy, stress). **Random entries (same days, directions, bracket): mean −0.047R gross, 95th +0.009R → the rule is at
+the 98.8th percentile** (passes the null criterion). Years after costs: 2023 +0.03R (399), 2024 −0.02R (424), 2025 H1
+−0.09R (202). Shorts +0.02R (514), longs −0.05R (511). Exits: 543 stops, 440 targets, 42 time.
+### Decision (2026-10-18): FAIL. On clean data her zone + rejection timing is better than random (about +0.08R a trade
+better than random entries, the second time after H-013's development period, now out of sample), but the edge is
+smaller than the costs and weakening year by year. Not tradable as a rule. Her zone method is closed for backtesting
+(no clean data left); the remaining question, whether a trader's selection among these setups adds enough to beat
+costs, can only be answered by forward demo records (`research/journal/setups_log.csv`).
 
 ---
 
