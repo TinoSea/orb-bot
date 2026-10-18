@@ -795,6 +795,35 @@ not a durable edge. H-006/H-009 closed; no MT5 bot.
 
 ---
 
+## H-010: New York opening-range break, entry on the break close, up to two trades a day
+
+**Registered:** 2026-10-18, before any H-010 run.  **Status:** OPEN (waiting for the US100 M1 export)
+
+**Idea.** In the H-008 final test, random entries in V3's directions earned the same as the retest entry (+0.108R vs
++0.105R gross). So the value is in the *direction* of the 15-minute opening-range break, not in the retest. H-010 drops
+the retest, enters on the break, and allows one more try in the same direction after a stop-out.
+**Exact rules tested** (agreed with Tino before any data was loaded). US100 1-minute bars, New York time.
+1. Range = high/low 09:30-09:45; skip the day if the range is under 5 or over 150 points (as V3).
+2. On closed 5-minute bars from 09:45, the first close above the high (below the low) sets the direction for the day.
+3. Trade 1: market order on that close, filled at the next 1-minute open. Stop = range height, target = 2 × range (as V3).
+4. Trade 2 only if trade 1 is stopped out: the next 5-minute close beyond the range in the same direction, same bracket.
+   Never the opposite direction.
+5. At most two trades; none after a winner or a 12:00 exit. No entries after 11:30 (a 5-minute bar closing at 11:30 counts).
+   Flat at 12:00 (close of the 11:59 bar). A 1-minute bar touching stop and target counts as a loss.
+Differences from V3: entry on the close instead of a retest limit; direction fixed for the day; up to two trades;
+flat at 12:00 instead of 15:55.
+**Data.** FP Markets US100 M1 exports (2022-10→2025-06 and 2025-07→2026-10), as in H-008. Costs 0.5625 points per
+round trip (futures estimate).
+**Pass (decided before testing).** 2023-01-01→2024-12-31: futures-estimate expectancy > 0 over ≥ 300 trades.
+2025-2026 reported only as a check. Reported but not part of the verdict: trade 1 vs trade 2, longs vs shorts, each
+year, random-entry comparison, stress (stop 1 point worse, costs doubled).
+**Caveats, stated now.** This bar is lower than H-008's (PF ≥ 1.2, ≥ +0.10R, beat random), and 2023-24 is not unseen:
+it was in H-008's final test. A pass here means "worth a demo", not "proven". **Budget:** one run; no changes after.
+### Results
+### Decision
+
+---
+
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
