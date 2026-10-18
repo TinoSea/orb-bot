@@ -317,6 +317,18 @@ Approximation: removing Friday-afternoon trades could free the bot for a setup t
   fail after 10 months, matching the Python simulator (the same start fails at 1.5% there too). It also exposed a
   guard design flaw, fixed in EA v1.14 (see `mt5_results.csv`). Consistent with the decision above: not yet.
 
+**18. FTMO Futures (Nasdaq) — deployment check, 2026-10-18, no strategy results involved.**
+FTMO Futures (ftmo.com, read 2026-10-18): NinjaTrader, Tradovate or TradingView only (no MetaTrader, so the bot
+would need rewriting); EOD-trailing max drawdown ($2,000 on $50K Growth); and **positions may not be held past
+the end of the trading day (16:10 ET) — open positions are liquidated, and strategies that depend on holding past
+the close are prohibited.** H-002 holds trades overnight by design: on the in-sample gold list, 82 of 112 trades
+were held past 16:10 ET (mean +0.23R) while the 30 same-day trades averaged −0.12R. A forced daily close would
+therefore remove the part of the strategy that carries the edge. **Decision: H-002 is not deployable on FTMO
+Futures as registered.** An intraday version would be a new hypothesis with its own rules and tests. Nasdaq
+itself stays in H-002 through US100 (the CFD on the same index), testable in MT5 and tradable on FTMO's CFD
+challenge (Swing account, overnight allowed). Sizing note: Micro Nasdaq (MNQ) is $2 per point; the in-sample
+median US100 stop (~136 points) is ~$272 per MNQ; the full NQ ($20 per point) is ~$2,700 per contract.
+
 ### Results
 **Gate 0 — PASSED (2026-10-18).** MT5 Strategy Tester, MS_Gold v1.13 (commit 251b9c8), XAUUSD.r H1,
 2023-01-01 → 2025-06-30, 1-minute OHLC, $5,000, research mode. Compared with the independent Python replica
