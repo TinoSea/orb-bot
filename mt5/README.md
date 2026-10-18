@@ -145,7 +145,7 @@ Trades the rule in `research/hypotheses.md` → H-017 automatically. **Demo only
    `mt5/LK_Forward.mq5` → **Compile** (0 errors).
 2. Demo account → open a **US100** chart (any time frame) → drag **LK_Forward** onto it → tick **Allow Algo Trading**
    → leave every input at its default → OK → **Algo Trading** button on (green).
-3. MT5 must be running 09:25-11:45 New York time (16:25-18:45 Harare until 1 Nov, then 17:25-19:45) on Monday-Thursday.
+3. MT5 must be running 09:25-11:45 New York time (15:25-17:45 Harare until 1 Nov, then 16:25-18:45) on Monday-Thursday.
 4. Once a month, send Claude `MQL5/Files/LK_journal.csv` (File → Open Data Folder → MQL5 → Files).
 Don't change inputs during the test; if you must, tell Claude so it can be recorded.
 
