@@ -644,6 +644,22 @@ Secondary check of the pick on 2026-04-01→2026-10-16 (already used by H-005/H-
 expectancy ≥ +0.10R; mean R above the 95th percentile of a random-entry null (same days, directions, stop distances,
 target rule; entry minutes uniform in the fill window); reported also with costs doubled. Pass → MT5 bot → 2-3 months demo.
 
+**Amendment H-007/1 (2026-10-18): the gate failed; rule change before any statistics.**
+Gate traces (only the six gate days were looked at): G1 failed — on 2026-06-09 the London-extreme bias turns long at
+09:55, after her 09:42 entry; her trade was a pause just under the London high and a buy on the break through it.
+G2 failed for 2025-11-03 (no bias at 09:34-09:38; the London high broke at 09:00 and failed only at 09:40) and passed
+for 2025-10-31 09:31-09:39; both days are 15-second "Prop Firm" scalps, not BPB, so G2 becomes a diagnostic.
+2026-10-05 never gets a London bias (her bias was news). This is a rule change, not a bug fix, and is recorded as such.
+**New rules (replace V0-V3):** a *pause* = the last 2 or 3 closed 5-minute bars, combined range ≤ 1.5 ATR, with a key
+level inside the pause range or within 0.5 ATR of it. Stop orders on **both** sides (pause high + 0.25 / low − 0.25),
+one-cancels-other, valid 3 bars (a fill on one side cancels the other). Direction = the side that breaks. Stop = other side of the pause; same risk limits, fills, times and limits.
+- **V0** BPB both directions, target 2R. **V1** V0 with next-level target. **V2** BOS in either direction (5-min close
+  beyond the previous 6 bars' extreme sets the direction), zone tap as before, 2R.
+- **V3** V0 but only in the direction allowed by the original London-extreme bias (the registered rule, kept for comparison).
+**New gate:** G1 2026-06-09 — V0 long filled 09:35-09:50; G3 2026-10-05 — V0 long filled 09:10-09:35. Diagnostics:
+2025-10-31, 2025-11-03, 2026-10-12. If the new gate fails, H-007 stops here and is reported as not reproducible.
+Pass criteria, periods and the single final test are unchanged.
+
 ---
 
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
