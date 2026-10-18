@@ -377,9 +377,16 @@ pullback −0.050 (+0.048, 1.09); A3 no session −0.033 (+0.089, 1.16); R1 swin
 meets the robustness and US500 criteria (R1-R3 PF 1.06-1.13; US500 PF 1.25) but is not distinguishable from random
 entries (85th percentile), and silver, its sector partner, is the worst market (−0.27R).
 
+**Out-of-sample run, registered 2026-10-18 before it was run (Tino's choice).** Gold only, once, 2025-07-01→2026-10-16,
+V0 settings unchanged, calibrated spreads, $5,000, code frozen at the commit that adds this paragraph. Engine: the Python
+replica on FP Markets XAUUSD M1 bars (Gate 0: 112/112 trades identical to MT5; real ticks changed the mean by +0.003R),
+instead of the MT5 real-tick run named in the Gate 0 note — a disclosed deviation. Same window and settings for the
+registered checks: criterion 5 (R1 swing 3, R2 zone 0.2, R3 zone 0.5 on gold) and criterion 6 (US500, M5). Gold's
+original pass criteria apply unchanged; the B1 random-entry percentile is reported, not judged. The portfolio
+out-of-sample run is not made (rejected in-sample).
+
 ### Decision
-*(pending Tino: whether to spend the single gold out-of-sample run, 2025-07-01→2026-10-16; the portfolio version is
-rejected in-sample and its out-of-sample run would serve no purpose)*
+*(after the out-of-sample run)*
 
 ---
 
