@@ -754,7 +754,7 @@ opening-range break-and-retest adds nothing over random timing. Data: FP Markets
 
 ## H-009: H-006 entries, traded so that costs are a small share of each trade
 
-**Registered:** 2026-10-18, before any H-009 run.  **Status:** OPEN
+**Registered:** 2026-10-18, before any H-009 run.  **Status:** FAILED confirmation (2026-10-18)
 
 **Problem.** H-006 V0 entries win ~55% at 6.25/6.25 (+0.09-0.10R before costs in both periods, a plateau across zone
 settings), but the futures cost (0.5625 points ≈ $11 per NQ round trip) is 0.09R at a 6.25-point stop. The 4/25 exit
@@ -784,6 +784,14 @@ each must beat the **97.5th** percentile of its random-entry null (Bonferroni); 
 after seeing the Apr-Oct descriptive numbers; the confirmation data is untouched.
 **Data needed:** FP Markets US100 ticks 09:00-11:45 NY and M1 bars from 2022-10-01 to 2025-07-01 (ExportTicks, default
 NY window), converted to 1-second bars like H-005.
+
+### Confirmation, run once each (2023-01-01→2025-06-30, never used before), after futures costs
+**A (12.5/25): 778 trades, win 32.8%, −0.07R (PF 0.90, 95% −0.16 to +0.03), 76th percentile vs random, stress −0.14R → FAIL.**
+**D (daily zones, 12.5/25): 52 trades, win 40.4%, +0.17R (PF 1.27, 95% −0.24 to +0.57), 87th percentile vs random
+(97.5th needed), stress +0.04R → FAIL** (fewer than 100 trades; not distinguishable from random).
+### Decision (2026-10-18): FAIL. The H-006 entry edge seen in 2025-26 (≈55% at 1:1; +0.13-0.14R for A after costs)
+did not exist in 2023-2025 (A won 32.8% at 2:1, below the 33.3% break-even before costs). Treated as a 2025-26 effect,
+not a durable edge. H-006/H-009 closed; no MT5 bot.
 
 ---
 
