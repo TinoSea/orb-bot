@@ -105,6 +105,21 @@ Exact replica of the small-account rules on the raw bars (instead of the quick t
 
 ---
 
+## H-015: gold long-only, on demo (or live under the plan's rules)
+
+The plan, stop rules and pass bar are in `research/hypotheses.md` → H-015. Setup:
+
+1. Use **MS_Gold v1.14** (already compiled from `mt5/MS_Gold.mq5`; the Experts log prints the version on start).
+2. Log into the **demo** account (recommended: $10,000 balance). Open an **XAUUSD.r** chart, timeframe **H1**.
+3. Drag **MS_Gold** onto the chart → tick **Allow Algo Trading** → **Inputs** tab: change only
+   **`InpAllowShort` = false**. Leave everything else at its default (risk 1%, `InpMinLotMaxRiskPct` 0). OK.
+4. Turn on **Algo Trading** in the toolbar (green). The chart should show the bot's status.
+5. Keep MT5 running while a trade is open (trades can last up to 5 days): keep the Mac awake and online, or rent an
+   MT5 VPS (Tools → Options → … or right-click the account in Navigator → Register a Virtual Server).
+6. **Live (only under the plan's rules: balance ≥ $2,500, money you can afford to lose):** same steps on the real
+   account, plus **`InpAllowLive` = true**. The bot refuses real money without it.
+7. Once a month, send Claude `MQL5/Files/MS_journal.csv`.
+
 ## H-004 quick start: SD_Scalp (Nasdaq scalp from the video)
 
 1. MetaEditor → File → New → Expert Advisor → name **SD_Scalp** → paste `mt5/SD_Scalp.mq5` → **Compile** (0 errors).

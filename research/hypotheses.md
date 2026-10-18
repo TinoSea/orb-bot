@@ -2,6 +2,28 @@
 
 Each entry is written **before** testing. Results and the decision are added at the end, never edited away.
 
+## Status board (updated 2026-10-18) — start here
+
+Search this file for the code (e.g. "H-002") to read the full entry: idea, exact rules, results, decision.
+
+| Code | Idea | Status | One-line result |
+|---|---|---|---|
+| H-001 | Opening-range breakout, S&P 500 | open (stalled) | −0.32R a trade on Jan-Mar 2024; not pursued |
+| H-002 | Gold 4H structure + 1H pullback (MS_Gold) | **rejected out of sample** | gold +0.27R unseen, but shorts and US500 failed; 14 markets no better than random |
+| H-003 | Morning move → last half hour, S&P 500 | failed | −0.21 points a trade after costs |
+| H-004 | Her supply/demand scalp (our guess of her rules) | parked | no edge after costs |
+| H-005 | Her own filmed trades vs random | closed | 85th percentile, not distinguishable from luck |
+| H-006 | Her daily/4H/1H zones + failed-extreme entry | failed | ~+0.10R before costs, ~0 after |
+| H-007 | London X / New York X framework | stopped at gate | not reproducible as a rule |
+| H-008 | Opening-range break-and-retest, Nasdaq | failed | retest no better than random timing |
+| H-009 | H-006 entries, wider brackets | failed | edge did not hold in 2023-25 |
+| H-010 | NY opening-range break, 2 trades a day | not pursued | second trade loses every year |
+| H-011 | Her fair value gaps + rejection candle | stopped at gate | finds her zone, trades far too often |
+| H-012 | H-011 + 2 selection rules | failed | −0.07R after costs |
+| H-013 | H-011 + earlier-day zones only | failed | beat random before costs, −0.04R after |
+| H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
+| **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
+
 ---
 
 ## H-001: Opening-range breakout on the S&P 500
@@ -1030,6 +1052,51 @@ stress −0.078R → FAIL** (PF, expectancy, null and stress). Exits: 118 target
 development period (96.6th percentile) did not repeat out of sample at the wider bracket (86th, gross +0.02R).
 Her zones and sessions are reproduced; no mechanical version of her entries has an edge after costs. Re-open only with
 her full broker trade history (several months, losing days included).
+
+---
+
+## H-015: Gold long-only (MS_Gold with shorts off), forward test on demo or live
+
+**Registered:** 2026-10-18, before any forward trade.  **Status:** OPEN — forward period starts 2026-10-19.
+
+**Why.** H-002 was rejected as registered (shorts and US500 failed), but its gold *long* entries beat random long
+entries in both periods: in-sample 67 longs, +0.16R; out-of-sample 26 longs, +0.59R (99th percentile of random longs).
+This was noticed after the out-of-sample result, so all historical gold data is used up for it. Only new data can test it.
+
+**Exact rules.** MS_Gold v1.14 on XAUUSD.r H1 (FP Markets), every input at its default **except `InpAllowShort = false`**
+(and `InpAllowLive = true` only on a real-money account). So: H-002 V0 rules, longs only; 1% risk per trade; daily
+loss limit 2%, weekly 5%, kill switch 15%; Friday 16:30 NY close; 5-day max hold; `InpMinLotMaxRiskPct = 0` (never
+force the smallest lot: if 1% is too small for 0.01 lot, the trade is skipped and logged).
+
+**Account size (contract fact, from the 93 historical longs).** Median stop 0.59% of price ≈ $24.6 per 0.01 lot at
+gold $4,176, so 1% risk on every trade needs a balance of about **$2,500** (0.5% risk: about $5,000). Smaller balances
+skip most trades. Demo: use a $10,000 balance so the test sees every trade.
+
+**Demo or live.** Both are allowed by this plan, under the same rules and stop rules. Recommended: demo until the
+30-trade checkpoint. Live requires all of: balance ≥ $2,500; money Tino can afford to lose; `InpAllowLive = true`;
+risk ≤ 1%. MT5 must stay running while a trade is open (Mac awake or an MT5 VPS), because the 5-day and Friday exits
+are done by the bot; stops and targets sit at the broker.
+
+**Expected pace.** About 2 long trades a month (in-sample 2.2, out-of-sample 1.7): ~15 months to 30 trades.
+
+**Stop rules (from 20,000 resamples of the 93 historical longs; protocol item 13).** Stop the test, on demo or live, if:
+- the drawdown since the start reaches **5.5R within the first 10 trades**, or **8.5R within the first 30**
+  (95th percentile of simulated drawdowns); or
+- after 15 trades the average is **below −0.25R** (5th percentile).
+The EA's own limits (2% day, 5% week, 15% kill switch) stay on.
+
+**Verdict.**
+- **Checkpoint at 30 trades:** average ≥ +0.15R after real costs and PF ≥ 1.2 → continue (live allowed if not already);
+  average < 0 → stop and close H-015; in between → continue to 50.
+- **Final at 50 trades:** same bar. Pass → keep running at 1%; only then consider more size or a prop challenge.
+- Honest power: with no real edge, a 30-trade test still passes about **25%** of the time by luck; with the historical
+  edge it passes about 72%, with half of it about 48%. So a pass is encouragement, not proof.
+
+**Record keeping.** `MQL5/Files/MS_journal.csv` (every fill) sent to Claude monthly; a weekly review with
+`research/reviews/TEMPLATE.md`; monthly reconciliation: the Python replica on the same dates must reproduce ≥ 90% of the
+bot's trades (otherwise find out why before going on). Any rule change ends H-015 and starts a new hypothesis.
+### Results
+### Decision
 
 ---
 
