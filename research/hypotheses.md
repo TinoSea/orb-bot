@@ -597,6 +597,55 @@ gross edge is real; only then (b) a cost-reducing bracket (wider stop/target) or
 
 ---
 
+## H-007: New York X bias + BPB / BOS entries on 5-minute bars (her full framework)
+
+**Registered:** 2026-10-18, before any H-007 code existed.  **Status:** OPEN
+
+**Sources.** Her videos (bias from London high/low; no trade before one is tested; never trade consolidation; zone,
+rejection or candle-break entries; done before 10:00 news), her own chart of 2026-10-05 (BPB, London high/low/50%),
+member posts (BPB = Bias, Pause, Break; 5-minute pause box, stop beyond it, far targets; BOS model: break of the
+previous 5-min high/low, enter on the tap of the last opposite candle, 1:2, max 2 trades; stops scale with volatility),
+and a summary of London X / New York X (sweep-and-fail → reversal; break-and-hold → continuation).
+H-004..H-006 most likely tested her "Prop Firm" 15-second scalp, not this framework.
+
+**Data.** FP Markets US100 1-minute bars (all hours), New York time (server − 7 h). Prices are CFD bid; costs use the
+futures estimate 0.5625 points per round trip (≈ $11.25 per NQ), converted to R per trade (cost / stop distance).
+
+**Levels (per day).** Asia 20:00-24:00 (previous evening); London 03:00-08:00 high (LH), low (LL), 50%;
+06:00-07:00 high/low; previous New York session 09:30-16:00 high, low, 50%. ATR = ATR(14) of 5-minute bars.
+
+**Bias (from 08:00, on closed 5-minute bars), per London extreme:**
+- a bar trades beyond the extreme and closes back inside → *swept-fail* → reversal bias;
+- a bar closes beyond the extreme → *broken*; later a bar comes back to within 0.25 ATR of the level and closes on
+  the far side → *held* → continuation bias; a later close back inside → *failed* → reversal bias.
+- The most recent event across both extremes sets the bias. No bias → no trade.
+
+**V0 (BPB, target 2R).** After the bias is set: a *pause* = the last 2 or 3 closed 5-minute bars (all after the bias bar)
+with combined range ≤ 1.5 ATR, within 1 ATR of a key level. A stop order at the pause extreme + 0.25 in the bias
+direction, valid 3 bars, cancelled by a 5-minute close through the other side. Stop = other side of the pause ∓ 0.25
+(kept between max(4 pts, 0.25 ATR) and 3 ATR, else no trade). Target 2R. Exit at 12:00 if still open.
+Fills on 1-minute bars: stop order fills at max(trigger, open); a 1-minute bar touching both stop and target counts as
+a loss; the fill bar only checks the stop.
+**V1** = V0 with target = next key level ≥ 1R beyond the entry (2R if none).
+**V2 (BOS).** After the bias is set: a 5-minute close beyond the extreme of the previous 6 bars in the bias direction;
+zone = the most recent opposite-colour bar before it (within 6 bars); limit order at the zone's near edge, valid
+6 bars, cancelled by a close through the zone; stop = far edge ∓ 0.25 (same limits); target 2R.
+**V3** = V0 skipping days when London already expanded: London range ≥ 2 × Asia range and London traded outside the Asia range.
+**All:** fills 08:00-11:00, none 09:57-10:03; one position at a time; ≤ 2 trades a day.
+
+**Gate (before any statistics are looked at).** G1: 2026-06-09 — continuation bias (long) by 09:45 and a V0 or V2 long
+filled 09:25-09:55. G2: 2025-10-31 and 2025-11-03 — bias bearish at 09:31-09:41 (her on-camera shorts).
+Diagnostics only: 2026-10-05 (her news-based long, expected to be missed by design), 2026-10-12 (London-session
+1-minute short, outside this engine's window). A gate failure allows bug fixes only, recorded here.
+
+**Development** 2025-07-01→2026-03-31: pick the variant with the highest futures-estimate expectancy (min 60 trades).
+Secondary check of the pick on 2026-04-01→2026-10-16 (already used by H-005/H-006 for other rules).
+**Final test, once:** 2023-01-01→2025-06-30 (never used). **Pass:** ≥ 100 trades; futures estimate PF ≥ 1.2 and
+expectancy ≥ +0.10R; mean R above the 95th percentile of a random-entry null (same days, directions, stop distances,
+target rule; entry minutes uniform in the fill window); reported also with costs doubled. Pass → MT5 bot → 2-3 months demo.
+
+---
+
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
