@@ -1,0 +1,30 @@
+{
+ "variant": "V2",
+ "trades": 309,
+ "days": 184,
+ "win_rate": 0.3074433656957929,
+ "gross_R": -0.09745625823759069,
+ "fut_R": -0.13688251093688558,
+ "fut_PF": 0.8089381275125598,
+ "fut_R_2xcost": -0.1763087636361805,
+ "fut_R_ci95": [
+  -0.28306396523479116,
+  0.01569518392206185
+ ],
+ "median_risk_pts": 17.0,
+ "longs": 172,
+ "shorts": 137,
+ "exits": {
+  "stop": 211,
+  "target": 88,
+  "time": 10
+ },
+ "null_mean": 0.02762274593305185,
+ "null_p95": 0.1523345416600121,
+ "percentile_vs_null": 0.0439,
+ "verdict": "FAIL (>=100 trades True, PF>=1.2 False, exp>=+0.10R False, beats null 95% False)",
+ "period": [
+  "2025-07-01",
+  "2026-03-31"
+ ]
+}

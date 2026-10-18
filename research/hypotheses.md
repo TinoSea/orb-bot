@@ -23,7 +23,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-013 | H-011 + earlier-day zones only | failed | beat random before costs, −0.04R after |
 | H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
 | H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
-| H-018 | BOS model (break of structure, zone tap, 2R) | open | |
+| H-018 | BOS model (break of structure, zone tap, 2R) | failed | −0.14R after costs; worse than random (4th pct) |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
@@ -1160,7 +1160,7 @@ Honest power: at 150 trades the win rate is known to about ±8 points (95%), so 
 
 ## H-018: The BOS model (break of structure) on its own
 
-**Registered:** 2026-10-18 (Mon 19 Oct), before any BOS statistics.  **Status:** OPEN
+**Registered:** 2026-10-18 (Mon 19 Oct), before any BOS statistics.  **Status:** FAILED development (2026-10-19)
 **Why.** Tino wants to try the community's BOS model. It was coded as H-007/1 variant V2 but never measured: H-007
 stopped at its gate (registered on V0) before any statistics; V2's only trace was a +2R long on 2026-10-05.
 **Rules (h007.py V2, unchanged; driver `research/h018.py`).** US100 5-minute bars, NY time. A 5-minute close beyond the
@@ -1172,8 +1172,13 @@ flat 12:00. Futures-estimate costs 0.5625 points per round trip.
 development futures expectancy is above zero (that period was used by other rules, not by BOS: near-clean).
 **Pass (final):** ≥ 100 trades; PF ≥ 1.2 and ≥ +0.10R after futures costs; mean R above the 95th percentile of random
 entries (same days, directions, stop and target). **Tries:** 18th registered hypothesis.
-### Results
-### Decision
+### Results (2026-10-19, development run once)
+**2025-07-01→2026-03-31: 309 trades on 184 days, win 30.7% (2R needs ≥ 33.3% before costs), gross −0.097R, futures
+estimate −0.137R (PF 0.81, 95% −0.28 to +0.02), median stop 17 points.** Random entries with the same days, directions,
+stops and targets: +0.028R mean → the rule is at the **4th percentile** (worse than random). Exits: 211 stops, 88 targets,
+10 time. Longs 172, shorts 137.
+### Decision (2026-10-19): FAIL at development; the 2023-2025 final run is not spent (as registered). Entering on the tap
+of the last opposite candle after a 5-minute break of structure did worse than random timing in the same direction.
 
 ---
 
