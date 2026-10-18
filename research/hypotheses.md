@@ -954,7 +954,7 @@ than random), but the 25-tick bracket's cost (0.09R) is larger than the edge: th
 
 ## H-014: H-013 with her 50-tick bracket (12.5 / 12.5 points)
 
-**Registered:** 2026-10-18, after H-013's development result, before any H-014 run.  **Status:** OPEN
+**Registered:** 2026-10-18, after H-013's development result, before any H-014 run.  **Status:** FAILED test (2026-10-18)
 **Rules:** exactly H-013 (her fair value gaps from earlier days only, 15-second rejection candle, stop entry 1 tick
 beyond it for 45 s, entries 09:30-11:30 except 09:57-10:03, 15-minute cap, flat 11:45, ≤ 7 trades, stop after 2
 losses, no Fridays), with **stop and target 12.5 points each** (her "50 ticks"). Code: `research/h014.py` (h013.py with
@@ -967,8 +967,15 @@ H-005 Q4, H-006 and H-009 for other rules, so near-clean). No development run: d
 random-entry null (same days and directions, same bracket, entry seconds uniform in 09:30-11:30 outside 09:57-10:03);
 stress expectancy > 0. Pass → confirmation on 2023-2025 ticks → demo, not money.
 **Tries:** 14th registered hypothesis; 4th variant of her zone method. This spends the last clean period for it.
-### Results
-### Decision
+### Results (2026-10-18, run once at commit 6b1f5ac)
+**Test 2026-04-01→2026-10-16 (143 tick days, Fridays excluded): 231 trades on 73 days, win 51.1%, gross +0.022R,
+futures estimate −0.023R (PF 0.95, 95% −0.15 to +0.11), 86th percentile vs random entries (95th = +0.060R),
+stress −0.078R → FAIL** (PF, expectancy, null and stress). Exits: 118 targets, 113 stops. Shorts −0.00R (113), longs
+−0.05R (118). Months after costs: Apr +0.19, May −0.40, Jun −0.05, Jul −0.14, Aug +0.05, Sep +0.14, Oct +0.10 (14 trades).
+### Decision (2026-10-18): FAIL. Closes her zone method (H-011..H-014). The timing advantage seen in H-013's
+development period (96.6th percentile) did not repeat out of sample at the wider bracket (86th, gross +0.02R).
+Her zones and sessions are reproduced; no mechanical version of her entries has an edge after costs. Re-open only with
+her full broker trade history (several months, losing days included).
 
 ---
 
