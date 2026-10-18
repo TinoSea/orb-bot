@@ -899,7 +899,7 @@ needs a new registration with an explicit selection rule, counted as a new try.
 
 ## H-012: H-011 plus two selection rules (which rejection candles count)
 
-**Registered:** 2026-10-18, before any H-012 run and before any H-011 development statistics.  **Status:** OPEN
+**Registered:** 2026-10-18, before any H-012 run and before any H-011 development statistics.  **Status:** FAILED development (2026-10-18)
 **Why.** H-011's gate day (2025-10-23) showed the rule finds her zone but fires far too often, including four losing
 shorts at the open into gaps formed that morning, which she did not trade. Two selection rules chosen by Tino:
 1. **Only zones from earlier days:** gaps formed before 00:00 New York time of the trading day (up to 5 trading days back).
@@ -916,8 +916,17 @@ code (no shorts at Thursday-morning gaps; trades in the Wed 22 Oct gap).
 development futures-estimate expectancy is above zero. **Test, once:** 2026-04-01→2026-10-16 (near-clean, as H-011).
 **Pass (test):** as H-011: ≥ 100 trades; PF ≥ 1.2 and ≥ +0.10R after futures costs; mean R above the 95th percentile of
 the random-entry null; stress > 0. **Tries:** counts as a new try after H-011 (12th registered hypothesis).
-### Results
-### Decision
+### Results (2026-10-18)
+Code trace 2025-10-23 (not evidence): Thursday-morning gaps ignored; four early shorts skipped by rule 2 (+42 to +62
+points since the open, limit 16.6); trades in the Wed 22 Oct gap: +1, −1, +1, −1, then the 2-loss stop.
+**Development, run once (2025-07-01→2026-03-31, 194 tick days, Fridays excluded):** 357 trades on 105 days, win 51.3%,
+gross +0.021R, futures estimate **−0.069R** (PF 0.87, 95% −0.17 to +0.03), stress −0.18R, 82nd percentile vs random
+entries (random mean −0.027R, 95th +0.059R). Shorts −0.13R (155), longs −0.02R (202); 5-minute zones −0.06R,
+15-minute −0.08R. Months after costs: −0.01, +0.03, +0.11, −0.24, −0.33, −0.09, −0.16, −0.07, +0.03.
+### Decision (2026-10-18): FAIL at development — expectancy below zero, so the test period (2026-04→10) is not spent.
+A 51% win rate at 1:1 is close to random timing and below the 54.5% needed after costs. With her zones and sessions
+reproduced, and the two selection rules added, the rejection-candle entry has no edge. The La'Kera line is closed
+again; re-open only with her full broker trade history.
 
 ---
 
