@@ -551,7 +551,7 @@ for ≥3 consecutive months including losing days), which would allow Q1 on ≥1
 
 ## H-006: Higher-time-frame supply/demand + failed-extreme entry (her fuller description)
 
-**Registered:** 2026-10-18, before any H-006 rule was run on any data.  **Status:** OPEN
+**Registered:** 2026-10-18, before any H-006 rule was run on any data.  **Status:** FAILED (2026-10-18)
 
 **Idea.** The user's summary of her method (YouTube WJleLLue6LA, nsdhIVKwjuQ; Instagram reel; beacons.ai/lakeratrades):
 key supply/demand zones on the **daily, 4-hour and 1-hour** charts; no bias before the open, react at the zones;
@@ -580,6 +580,20 @@ different rules were seen), so it is near-clean, not clean: **a pass only earns 
 above the 95th percentile of a random-entry null (same days, same count and directions, entry seconds uniform in
 09:30-11:30 outside the news blackout). Diagnostic, not a criterion: how many of her 8 aligned trades (10-31, 11-03)
 the chosen variant takes within 30 s.
+
+### Results (2026-10-18)
+**Development (2025-07-01→2026-03-31):** V0 256 trades, win 55.1%, gross +0.102R, futures estimate +0.012R (PF 1.02,
+95% −0.11 to +0.13); V1 253 trades, gross +0.091R, futures +0.001R; V2 233 trades, gross +0.090R, futures +0.000R.
+Pick: V0. Her 8 aligned trades taken within 30 s: 0 of 8 (V0 shorts 11-03 at 09:31:27 and 09:33:49 from a 4-hour zone; hers 09:34:30).
+**Test, run once (2026-04-01→2026-10-16), V0:** 156 trades, win 54.5%, gross +0.090R, futures estimate **−0.000R**
+(PF 1.00, 95% −0.15 to +0.17), 87th percentile vs random → **FAIL** (PF, expectancy and null criteria).
+By zone time frame (descriptive, not a result): daily-zone trades +0.26R (43) and +0.30R (23) gross; H1 +0.13R / −0.03R;
+H4 −0.06R / +0.14R.
+### Decision (2026-10-18): FAIL — no tradable edge after futures costs. Not built as an EA.
+The gross edge is the most consistent seen in H-004/5/6: ~55% wins and ≈ +0.09-0.10R gross in both periods (412 trades),
+but the 0.09R futures cost (≈ $11 per NQ round trip on a 6.25-point stop) takes all of it. Anything further must be a new
+registration: (a) replicate H-006 V0 unchanged on 2023-01→2025-06 real ticks (never used for any H-006 rule) to see if the
+gross edge is real; only then (b) a cost-reducing bracket (wider stop/target) or daily-zone-only, tested forward.
 
 ---
 
