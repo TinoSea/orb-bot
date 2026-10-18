@@ -549,6 +549,40 @@ for ≥3 consecutive months including losing days), which would allow Q1 on ≥1
 
 ---
 
+## H-006: Higher-time-frame supply/demand + failed-extreme entry (her fuller description)
+
+**Registered:** 2026-10-18, before any H-006 rule was run on any data.  **Status:** OPEN
+
+**Idea.** The user's summary of her method (YouTube WJleLLue6LA, nsdhIVKwjuQ; Instagram reel; beacons.ai/lakeratrades):
+key supply/demand zones on the **daily, 4-hour and 1-hour** charts; no bias before the open, react at the zones;
+entry on a rejection candle, a candle break, or a **failure to make a new high/low** at a zone; sit out chop and
+low volume; step away around news; scalps of under a couple of minutes. New versus H-004/H-005: the zone time frames,
+the failed-extreme entry, a news blackout, entries until 11:30.
+
+**Exact rules (V0).** US100, New York time, 15-second bid candles built from real ticks, mid-price scoring.
+- **Zones** at 09:30 from server-time H1, H4 and D bars (built from M1): impulse candle body ≥ 1.5 × ATR(14) of its
+  own time frame and ≥ 60% of its range; zone = the candle before it (demand below an up-impulse, supply above a
+  down-impulse). Look-back: H1 10 days, H4 30 days, D 60 days (less where the M1 file starts, 2025-06-30). A zone is
+  dropped once any later bar of its time frame closes beyond its far side, or a 15-s candle does during the session.
+- **Entry (failed extreme):** a 15-s candle that touches a supply zone and makes the highest high of the last 8 candles
+  (2 minutes) arms a SELL stop at its low − 0.01 for 4 candles; a higher high cancels it (and may re-arm from the new
+  candle). Demand mirrors it. This covers "rejection candle + break" and "failure to make a new high".
+- **Stop/target:** 6.25 / 6.25 points (her 25 ticks), 15-minute cap; flat by 11:45.
+- **Time:** new entries 09:30-11:30; none 09:57-10:03 (10:00 releases; no calendar available, so every day).
+- **Limits:** one position at a time; each zone trades once; ≤ 4 trades a day; stop after 2 losses; Fridays traded.
+**Variants (budget 3, chosen now):** V0 as above. V1 = V0 + "sit out chop": no new arm if the last 10 minutes' range
+< 0.75 × ATR(14) of M15. V2 = V0 with a structure stop: stop at the arming candle's extreme + 0.25, target the same
+distance (1:1), trade skipped if that stop is < 3 or > 12.5 points.
+**Data and periods.** Development 2025-07-01→2026-03-31 (pick one variant: highest futures-estimate expectancy);
+test 2026-04-01→2026-10-16, run once. That test period was already used by H-005 Q4 (two aggregate results for
+different rules were seen), so it is near-clean, not clean: **a pass only earns a 2-3-month forward demo, not money.**
+**Pass (test period):** ≥ 100 trades; futures-cost estimate (gross − 0.09R) PF ≥ 1.2 and expectancy ≥ +0.10R; mean R
+above the 95th percentile of a random-entry null (same days, same count and directions, entry seconds uniform in
+09:30-11:30 outside the news blackout). Diagnostic, not a criterion: how many of her 8 aligned trades (10-31, 11-03)
+the chosen variant takes within 30 s.
+
+---
+
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
