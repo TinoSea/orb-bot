@@ -440,6 +440,51 @@ costs in (1) are part of the test.
 
 ---
 
+## H-005: Where does her edge live? Replication from her own trades
+
+**Registered:** 2026-10-18, before any market data around her trades was looked at. **Status:** OPEN
+
+**Why.** H-004 coded her *described* rules and found no edge. Traders describe their own rules poorly; their
+trades are the better evidence. H-005 reconstructs what she *did* from seven of her videos (screen recordings
+of NQ on 15-second charts, position boxes such as "−16 @ 26224.50", performance screens), then asks where any
+edge sits: in her entries, in which setups she takes, or in sizing and exits.
+
+**Material.** The video frames (1 per second), read by text recognition and checked by eye. Her trades are
+recorded with date, side, entry and exit price, contracts and result; times from the chart clock where visible,
+otherwise aligned to market data (below). Her own stats screens are recorded as she showed them.
+**Market data:** FP Markets US100 bid/ask ticks (09:00–11:45 New York) and 1-minute bars, 2025-07-01 → 2026-10-16
+(`mt5/ExportTicks.mq5`). US100 is the cash Nasdaq 100 CFD; NQ futures trade at a premium (basis) that is near
+constant within a day. **Alignment:** for each video day one basis b is fitted so that her entry prices minus b
+match US100 mid prices at her (ordered) entry times, inside the chart-clock minute where visible. Days that cannot
+be aligned to within 1.5 index points are reported and dropped.
+
+**Questions and tests (fixed now)**
+- **Q1 Do her entries carry an edge?** Replay every reconstructed entry on US100 with her bracket (6.25 points each
+  way, 15-minute cap). Compare with 10,000 sets of random entries on the same days, 09:30–11:00, same count and
+  direction mix. Reported gross and with the futures-cost estimate (−0.09R).
+- **Q2 How much of her money comes from sizing and exits?** Her shown P&L vs Q1's fixed-bracket result for the
+  same trades (risk changes, doubling, trailing).
+- **Q3 What distinguishes her moments?** At every 15-second candle close 09:30–11:00 on her days: (1) nearest
+  zone distance (H-004 definition, ATR units), (2) inside a zone, (3) rejection candle, (4) break of the previous
+  candle in the trade direction, (5) side vs EMA20 of 15-minute closes, (6) London high/low taken (H-004 V3),
+  (7) minutes since 09:30, (8) 5-minute move in the trade direction (ATR units), (9) 30-minute range / ATR,
+  (10) distance from the day's 09:30 open (ATR units). Her entries are positives; all other candle closes are
+  negatives. L1-regularised logistic regression, leave-one-day-out cross-validation; report AUC. The clone rule
+  uses at most 3 features with thresholds set on her days only.
+- **Q4 Does the clone rule work?** Development 2025-07-01 → 2026-03-31; **holdout 2026-04-01 → 2026-10-16, run once**.
+  Same pass rules as H-004 on the futures-cost estimate: ≥100 trades, profit factor ≥ 1.2, expectancy ≥ +0.10R,
+  and better than the 95th percentile of random entries.
+
+**Known biases, stated now.** (a) She chooses which days to film and publish, so her visible trades over-represent
+good days; a positive Q1 cannot prove an edge, while a negative Q1 is strong evidence against one. (b) A small sample
+(expected 25–40 trades). (c) US100 is a proxy for NQ. (d) Her October–November 2025 days are inside the H-004
+out-of-sample window; H-004 is parked, so this is recorded rather than a conflict.
+
+**Decision.** Edge "lives in entries" only if Q1 beats the random 95th percentile *and* Q4 passes on the holdout.
+If Q1 fails, the conclusion is that what she shows is explained by sizing, exits or selection of days, not entries.
+
+---
+
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
