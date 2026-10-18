@@ -897,6 +897,30 @@ needs a new registration with an explicit selection rule, counted as a new try.
 
 ---
 
+## H-012: H-011 plus two selection rules (which rejection candles count)
+
+**Registered:** 2026-10-18, before any H-012 run and before any H-011 development statistics.  **Status:** OPEN
+**Why.** H-011's gate day (2025-10-23) showed the rule finds her zone but fires far too often, including four losing
+shorts at the open into gaps formed that morning, which she did not trade. Two selection rules chosen by Tino:
+1. **Only zones from earlier days:** gaps formed before 00:00 New York time of the trading day (up to 5 trading days back).
+2. **No trades against a strong opening move:** for signals closing 09:30-09:45, skip a trade against the move since the
+   09:30 open when that move is at least 0.5 × ATR(14) of 15-minute bars (last closed bar before 09:30). From 09:45 on,
+   no restriction. (Defined for the first 15 minutes only: on 23 Oct her shorts came after a ~150-point rally from the
+   open, so a whole-morning version would have blocked her own trades. This choice was informed by that day.)
+Everything else exactly as H-011 (zones ≥ 5 points on 5/15-minute bars, 15-second rejection candle, sell/buy stop 1 tick
+beyond it for 45 s, 6.25/6.25 points, 15-minute cap, entries 09:30-11:30 except 09:57-10:03, ≤ 7 trades, stop after 2
+losses, no Fridays, futures-estimate costs 0.5625, same stress case). Code: `research/h012.py`.
+**Caveat.** Both rules come from one filmed day, so 2025-10-23 is no longer a check: it is traced only to confirm the
+code (no shorts at Thursday-morning gaps; trades in the Wed 22 Oct gap).
+**Development** 2025-07-01→2026-03-31, seen once, no changes after (bug fixes only). The test is spent only if the
+development futures-estimate expectancy is above zero. **Test, once:** 2026-04-01→2026-10-16 (near-clean, as H-011).
+**Pass (test):** as H-011: ≥ 100 trades; PF ≥ 1.2 and ≥ +0.10R after futures costs; mean R above the 95th percentile of
+the random-entry null; stress > 0. **Tries:** counts as a new try after H-011 (12th registered hypothesis).
+### Results
+### Decision
+
+---
+
 ## H-003: Intraday momentum, first half-hour → last half-hour (S&P 500)
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
