@@ -1,0 +1,33 @@
+{
+ "US500": {
+  "sector": "US equity",
+  "trades": 47,
+  "strategy_R": -0.219,
+  "B1_random_mean": -0.07,
+  "B1_p95": 0.208,
+  "strategy_pct_vs_B1": 0.182,
+  "B2_trades": 465,
+  "B2_R": -0.053,
+  "calib_corr": 0.999,
+  "calib_mean_diff": 0.007
+ },
+ "XAUUSD": {
+  "sector": "Metals",
+  "trades": 41,
+  "strategy_R": 0.265,
+  "B1_random_mean": -0.009,
+  "B1_p95": 0.3,
+  "strategy_pct_vs_B1": 0.928,
+  "B2_trades": 463,
+  "B2_R": 0.091,
+  "calib_corr": 1.0,
+  "calib_mean_diff": 0.011
+ },
+ "PORTFOLIO": {
+  "trades": 88,
+  "strategy_R": 0.007,
+  "B1_random_mean": -0.04,
+  "B1_p95": 0.165,
+  "strategy_pct_vs_B1": 0.655
+ }
+}

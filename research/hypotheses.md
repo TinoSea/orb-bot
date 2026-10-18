@@ -52,7 +52,7 @@ before any real money.
 
 ## H-002: Higher-timeframe market structure on gold (trend + pullback)
 
-**Registered:** 2026-10-17  **Status:** OPEN  **Candidate primary strategy**
+**Registered:** 2026-10-17  **Status:** REJECTED out of sample (2026-10-18)
 
 **Idea.** Source: "Trading Course Day 11: Market Structure Entries" (ICC creator, free YouTube series).
 When the 4-hour trend turns (a higher low forms, then price breaks above the last swing high), the level
@@ -385,8 +385,22 @@ registered checks: criterion 5 (R1 swing 3, R2 zone 0.2, R3 zone 0.5 on gold) an
 original pass criteria apply unchanged; the B1 random-entry percentile is reported, not judged. The portfolio
 out-of-sample run is not made (rejected in-sample).
 
-### Decision
-*(after the out-of-sample run)*
+**Out-of-sample result (2026-10-18, run once at 0f8a2bc).** Gold 2025-07-01→2026-10-16 (gold $3,349 → $4,176):
+**41 trades, win 46.3%, +0.265R, PF 1.58, max DD 2.8%** (M1 and M5 identical). Longs 26, PF 2.82 (+0.59R); **shorts 15,
+PF 0.55** (−0.30R). By year: 2025 +0.36R (20), 2026 +0.17R (21).
+Registered criteria: (1) ≥ 30 trades — yes (41); (2) PF ≥ 1.2 and ≥ +0.15R — yes; (3) DD ≤ 20% — yes; **(4) short PF ≥ 0.9
+— no (0.55)**; (5) R1/R2/R3 PF ≥ 1.05 — yes (1.16 / 1.26 / 1.40; +0.09 / +0.13 / +0.19R); **(6) US500 PF ≥ 1.0 — no
+(47 trades, PF 0.60, −0.22R).**
+Descriptive (not judged): vs random entries with random direction, 93rd percentile; vs random long-only entries, 90th;
+the strategy's longs alone at the 99th percentile of random longs (26 trades). Simple trend rule on gold: +0.09R.
+### Decision (2026-10-18): REJECT as registered. Criterion 4 (shorts) and criterion 6 (US500) fail, and the registered
+fail rule rejects on a collapse of criteria 4-5. The profit came from long trades in a 25% gold rally, which is exactly
+what criterion 4 was written to catch; the same rules lost on US500 and, in-sample, across 14 markets (55th percentile
+vs random). Not deployable on FTMO or a live account.
+**What survives, as a question only:** gold's long entries beat random long entries in both periods (in-sample long PF
+1.34; out-of-sample 99th percentile on 26 trades). A long-only gold rule would be a new hypothesis chosen after seeing
+this result, so no historical data is left to test it fairly: only a forward demo (new data from 2026-10-19) could, at
+about two long trades a month.
 
 ---
 
