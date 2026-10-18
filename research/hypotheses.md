@@ -930,6 +930,21 @@ again; re-open only with her full broker trade history.
 
 ---
 
+## H-013: H-012 without rule 2 (earlier-day zones only)
+
+**Registered:** 2026-10-18, after H-012's development result was seen, before any H-013 run.  **Status:** OPEN
+**Rules:** H-012 with rule 2 removed: only fair value gaps formed before 00:00 NY of the trading day (up to 5 trading
+days back); everything else as H-011/H-012. Code: `research/h013.py` (h012.py with the opening-move filter off).
+**Why:** Tino's choice; rule 2 was the one that conflicted with her 23 Oct trades.
+**Protocol.** Development 2025-07-01→2026-03-31 was already seen through H-012 (the versions differ only for signals
+09:30-09:45), so development can only stop H-013, not support it. The test 2026-04-01→2026-10-16 (unused by any
+H-011..H-013 rule) runs once, only if development futures-estimate expectancy > 0. Pass rules as H-011.
+**Tries:** 13th registered hypothesis; 3rd variant of her zone + rejection method (H-011, H-012, H-013).
+### Results
+### Decision
+
+---
+
 ## H-003: Intraday momentum, first half-hour → last half-hour (S&P 500)
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
