@@ -415,6 +415,12 @@ Together with the two registered robustness runs (5-minute zones, 50-tick target
 **Selection:** the variant with the highest in-sample expectancy on the futures-cost estimate (3) is the one run
 out-of-sample; all six are reported, and the pass rules above apply to it unchanged. Not modelled: her news
 filter (the tester has no news calendar), trailing winners, and her variable position size, which a bot must not copy.
+
+### Results (H-004)
+**V0, in-sample, 2026-10-18** (US100, real ticks): 239 trades, **win rate 40.6%** (she reports 65–70%).
+After CFD costs **−0.203R per trade** (PF 0.68); the spread averaged 1.45 points = **23% of the stop**, as warned.
+**Gross +0.023R** (PF 1.05), i.e. no edge before costs; **futures-cost estimate −0.067R** (PF 0.88). V1–V5 to follow.
+
 **Even if it passes on (3),** it is only tradable on real futures (another platform and a rewrite), since the CFD
 costs in (1) are part of the test.
 
