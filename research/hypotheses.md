@@ -836,6 +836,54 @@ The La'Kera / community line (H-004 to H-010) is closed: re-open only with a ful
 
 ---
 
+## H-011: Her fair-value-gap zones + 15-second rejection candle (her definitions, from her own charts)
+
+**Registered:** 2026-10-18, before any H-011 rule was run on market data (only the July 2025 tick file's format
+and coverage were checked).  **Status:** OPEN (waiting for tick files)
+
+**Why this re-opens the H-004..H-010 line.** Her marked-up charts of 2025-10-23 (YouTube WJleLLue6LA, frames at
+09:17 NY, 15- and 5-minute NQ1!) were matched to FP Markets US100 with a futures premium of 143.4 points:
+- **Sessions:** Asia box 20:00-03:00 NY (25,112.6 / 24,950.7 vs data 25,113.5 / 24,952.0); **London 03:00-09:00**
+  (her Fibonacci 0 / 1 = 25,128 / 24,937 vs data 25,126.8 / 24,937.5); 0.5 = London halfway. We had used 03:00-08:00.
+- **Zones are fair value gaps** (three candles; candle 3 does not overlap candle 1), not "the candle before an
+  impulse": all five small Thursday zones match 5-minute gaps within ~1 point (exact labels 24,981.25-24,999.50 vs
+  24,981.7-25,000.0 + premium); the two Friday 17 Oct zones with labels match 15-minute gaps within a few points.
+  Zones reach back about five trading days.
+- **Her 23 Oct trades** (long 25,187.75; shorts 25,172.50, 25,156.25, 25,157.75, 25,162.50; long 25,176.25) all sit
+  inside one still-open supply gap from Wed 22 Oct 10:15 (15-minute: 25,141.8-25,210.3 in NQ terms).
+- Her words: "zone, rejection candle, or break of candle entry"; "supply zone, we broke below it, I entered".
+None of H-004..H-007 used fair value gaps or her session times, so they did not test her method as she draws it.
+
+**Exact rules.** US100, New York time, mid prices from real ticks; zones from M1 bars.
+1. **Zones:** every 5- and 15-minute fair value gap ≥ 5 points, formed in the last 5 trading days, live from the close
+   of its third candle until a later candle of the same time frame closes beyond its far edge.
+2. **Rejection candle (15 seconds, closed):** at a supply gap, its high is inside the gap, it closes down, and its upper
+   wick ≥ its body. Demand mirrors it.
+3. **Entry:** sell stop 1 tick (0.25) below the rejection candle's low, valid for the next 3 candles (45 s); fill at the
+   first tick through it. Only with the zone (sell at supply, buy at demand).
+4. **Exit:** stop and target 6.25 points (her 25 NQ ticks), 15-minute cap, flat 11:45.
+5. **Time and limits:** new entries 09:30-11:30, none 09:57-10:03 (no news calendar); one position at a time; ≤ 7
+   trades a day; stop after 2 losses; **no Fridays** (her rule).
+Costs: futures estimate 0.5625 points per round trip (0.09R). Stress: stops 0.25 worse, costs doubled.
+Not modelled: her 25-or-50-tick choice "by feel", her two counter-zone longs, which gaps she chooses not to draw
+(on 23 Oct she left out some ≥5-point gaps), news days, sizing.
+
+**Gate (before any statistics), 2025-10-23:** at least one short inside the Wed 22 Oct 15-minute supply gap, filled
+09:45-11:30. Diagnostic: entries within 3 points of her prices (US100 = NQ − 143.4). A failure allows bug fixes only,
+recorded here; a second failure stops H-011.
+**Development** 2025-07-01→2026-03-31, seen once, no changes after (bug fixes only). The test is spent only if the
+development futures-estimate expectancy is above zero.
+**Test, once:** 2026-04-01→2026-10-16. Both periods were used by H-005, H-006 and H-009 for other zone rules, so they
+are near-clean, not clean. 2023-2025 ticks (ExportTicks2023) remain for a confirmation run.
+**Pass (test):** ≥ 100 trades; futures-estimate PF ≥ 1.2 and expectancy ≥ +0.10R; mean R above the 95th percentile of a
+random-entry null (same days and directions, same bracket, entry seconds uniform in 09:30-11:30 outside 09:57-10:03);
+stress expectancy > 0. Break-even win rate after costs is 54.5%. Pass → confirmation on 2023-2025 → demo, not money.
+**Budget:** this one rule; any change after seeing development results is a new hypothesis.
+### Results
+### Decision
+
+---
+
 ## H-003: Intraday momentum, first half-hour → last half-hour (S&P 500)
 
 **Source:** Gao, Han, Li & Zhou, "Market Intraday Momentum", Journal of Financial Economics (2018).
