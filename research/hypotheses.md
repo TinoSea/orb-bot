@@ -419,7 +419,8 @@ filter (the tester has no news calendar), trailing winners, and her variable pos
 ### Results (H-004)
 **V0, in-sample, 2026-10-18** (US100, real ticks): 239 trades, **win rate 40.6%** (she reports 65–70%).
 After CFD costs **−0.203R per trade** (PF 0.68); the spread averaged 1.45 points = **23% of the stop**, as warned.
-**Gross +0.023R** (PF 1.05), i.e. no edge before costs; **futures-cost estimate −0.067R** (PF 0.88). V1–V5 to follow.
+**Gross +0.023R** (PF 1.05), i.e. no edge before costs; **futures-cost estimate −0.067R** (PF 0.88).
+**V1 (15-second candles):** 285 trades, win 38.6%, net −0.240R, **gross −0.013R**, futures estimate −0.103R. Worse than V0.
 
 **Even if it passes on (3),** it is only tradable on real futures (another platform and a rewrite), since the CFD
 costs in (1) are part of the test.
