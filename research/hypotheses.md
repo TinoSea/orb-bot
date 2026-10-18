@@ -839,7 +839,7 @@ The La'Kera / community line (H-004 to H-010) is closed: re-open only with a ful
 ## H-011: Her fair-value-gap zones + 15-second rejection candle (her definitions, from her own charts)
 
 **Registered:** 2026-10-18, before any H-011 rule was run on market data (only the July 2025 tick file's format
-and coverage were checked).  **Status:** OPEN (waiting for tick files)
+and coverage were checked).  **Status:** STOPPED at the gate (2026-10-18)
 
 **Why this re-opens the H-004..H-010 line.** Her marked-up charts of 2025-10-23 (YouTube WJleLLue6LA, frames at
 09:17 NY, 15- and 5-minute NQ1!) were matched to FP Markets US100 with a futures premium of 143.4 points:
@@ -879,8 +879,21 @@ are near-clean, not clean. 2023-2025 ticks (ExportTicks2023) remain for a confir
 random-entry null (same days and directions, same bracket, entry seconds uniform in 09:30-11:30 outside 09:57-10:03);
 stress expectancy > 0. Break-even win rate after costs is 54.5%. Pass → confirmation on 2023-2025 → demo, not money.
 **Budget:** this one rule; any change after seeing development results is a new hypothesis.
-### Results
-### Decision
+### Results (2026-10-18): gate FAILED — no bug; stopped as registered.
+Data: FP Markets US100 ticks 2025-07 and 2025-10→2026-10 received (2025-08/09 missing); only 2025-10-23 was run.
+Gate trace: 09:31 short at the Thu 07:30 15-minute supply gap (24,876-24,893 US100) and 09:35 short at the Thu 07:10
+5-minute gap (24,888-24,895, her own "~25,031-25,038" box): both stopped within 12 s as price rose through them; the
+2-loss limit ended the day before price reached the Wed 22 Oct gap (24,996-25,064 US100 = her 25,142-25,210 NQ).
+Checked: both gaps are valid by the rule (formed 07:10/07:30 Thu, not closed through until 09:40/09:45); the fills
+follow the rule. No bug, so a rerun would repeat the result and H-011 stops here. No development or test statistics
+were computed; the 2026-04→10 tick files are untouched.
+**Diagnostic, gate day only (limits removed; not a result):** 39 trades, 18 wins (46%); 28 in the Wed gap; 14 within
+3 points of her prices. The rule does find her zone and trades where she traded, but fires on nearly every 15-second
+rejection (her day: 7 trades, all winners), including four losing shorts into her own zones during the opening rally.
+### Decision (2026-10-18): STOP. Her zones (fair value gaps) and sessions are now reproduced exactly; her entry
+selection is not. Which rejection candle she takes, and which zones she ignores (she did not short the Thursday gaps
+during the opening rally), is the part that carries her results, and it is not in her stated rules. Any further work
+needs a new registration with an explicit selection rule, counted as a new try.
 
 ---
 
