@@ -115,7 +115,7 @@ The plan, stop rules and pass bar are in `research/hypotheses.md` → H-015. Set
    **`InpAllowShort` = false**. Leave everything else at its default (risk 1%, `InpMinLotMaxRiskPct` 0). OK.
 4. Turn on **Algo Trading** in the toolbar (green). The chart should show the bot's status.
 5. Keep MT5 running while a trade is open (trades can last up to 5 days): keep the Mac awake and online, or rent an
-   MT5 VPS (Tools → Options → … or right-click the account in Navigator → Register a Virtual Server).
+   MT5 VPS (in Navigator, right-click your account → Register a Virtual Server).
 6. **Live (only under the plan's rules: balance ≥ $2,500, money you can afford to lose):** same steps on the real
    account, plus **`InpAllowLive` = true**. The bot refuses real money without it.
 7. Once a month, send Claude `MQL5/Files/MS_journal.csv`.
