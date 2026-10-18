@@ -483,6 +483,20 @@ out-of-sample window; H-004 is parked, so this is recorded rather than a conflic
 **Decision.** Edge "lives in entries" only if Q1 beats the random 95th percentile *and* Q4 passes on the holdout.
 If Q1 fails, the conclusion is that what she shows is explained by sizing, exits or selection of days, not entries.
 
+**Amendment H-005/1 (2026-10-18, before any tick data was seen): what the frames actually gave.**
+Trade list in `research/h005_her_trades.csv`: 15 rows on 4 days (2025-10-01, 10-23, 10-31, 11-03).
+Two of the seven videos (car talk, Aspen) contain no trade screens; the August 2026 journal is inside the holdout and is not used.
+- Exact entry prices: 3 trades on 11-03 and 5 positions on 10-23 (10-23 shows no time axis: times must come from the tick data).
+- Times to about ±20 s but prices truncated by the video crop: 5 trades on 10-31.
+- 10-01: two longs, price ±5 points, time unknown (camera-filmed screen).
+- Her own day statistics show 7 trades on 10-23 and 6+ on 10-31, so the sample is about 15 of roughly 20 trades taken on filmed days.
+Consequences, written down now: Q1 (her entries vs random) and Q3 (what distinguishes her moments) have about 15 positives,
+so a Q3 AUC will carry a confidence interval roughly ±0.15 wide and the clone rule cannot be *learned* from her trades with any
+reliability. The clone rule for Q4 will therefore be her stated rule (H-004 V0 definitions) plus at most the ≤3 features Q3 ranks
+highest, and Q4's holdout pass rule is unchanged. Alignment rule tightened for 10-23: basis and times are solved together by
+requiring the five entry prices, in order, to be touched by US100 mid within 09:30–10:30 with 6.25-point wins after each; if more
+than one solution exists within 1.5 points of basis, 10-23 is used only for Q2 and dropped from Q1/Q3.
+
 ---
 
 ## H-003 (parked candidate): Intraday momentum, first half-hour → last half-hour
