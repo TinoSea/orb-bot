@@ -24,7 +24,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-014 | H-013 with 50-tick bracket | failed | −0.02R on unseen months |
 | H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
 | H-018 | BOS model (break of structure, zone tap, 2R) | failed | −0.14R after costs; worse than random (4th pct) |
-| H-019 | Build-up breakout at levels, with trend, 2R | registered | dev run pending |
+| H-019 | Build-up breakout at levels, with trend, 2R | failed | only 4 trades in 9 months; build-up filter too strict |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
@@ -1250,3 +1250,8 @@ Registered 2026-10-18, before any data was run. Code: research/h019.py. US100 1-
 
 **Pass (development 2025-07 to 2026-03, run once):** at least 100 trades; after-cost profit factor ≥ 1.2; expectancy ≥ +0.10R; gross R above the 95th percentile of random entries (same days, direction and stop); stress expectancy > 0.
 **Final run** (2023-01 to 2025-06), once, only if development expectancy after costs is above zero.
+
+### Results (development, run once 2026-10-18)
+4 trades on 4 days; 3 winners, 1 loser; +1.21R after costs; random entries 81st percentile. One code fix before the run counted: the position key was `dir`, not `d`. No rule changed.
+### Decision
+**Fail: fewer than 100 trades.** Four tight 5-minute candles spanning at most 0.75 ATR almost never form next to a level with the trend agreeing. Four trades say nothing either way. The final period stays unspent. Any looser version is a new hypothesis (H-020), registered first.

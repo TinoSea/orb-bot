@@ -1,0 +1,46 @@
+{
+ "trades": 4,
+ "days": 4,
+ "win_rate": 0.75,
+ "gross_R": 1.25,
+ "fut_R": 1.213,
+ "fut_PF": 5.72,
+ "fut_R_ci95": [
+  -0.282,
+  1.972
+ ],
+ "median_stop": 16.5,
+ "longs": 2,
+ "shorts": 2,
+ "exits": {
+  "target": 3,
+  "stop": 1
+ },
+ "stress": {
+  "trades": 4,
+  "days": 4,
+  "win_rate": 0.75,
+  "gross_R": 1.247,
+  "fut_R": 1.172,
+  "fut_PF": 5.392,
+  "fut_R_ci95": [
+   -0.323,
+   1.943
+  ],
+  "median_stop": 16.5,
+  "longs": 2,
+  "shorts": 2,
+  "exits": {
+   "target": 3,
+   "stop": 1
+  }
+ },
+ "null_mean": 0.242,
+ "null_p95": 1.25,
+ "percentile_vs_null": 0.815,
+ "verdict": "FAIL (>=100 False, PF True, exp True, null False, stress True)",
+ "period": [
+  "2025-07-01",
+  "2026-03-31"
+ ]
+}

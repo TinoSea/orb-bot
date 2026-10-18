@@ -99,7 +99,7 @@ def run_day(D, day, slip=0.0):
                                 order = dict(d=d, trig=trig, stop=stop, bhi=hi, blo=lo, left=VALID_BARS)
             j5 += 1
         if pos:
-            d = pos['d']
+            d = pos['dir']
             hs = (l[k] <= pos['stop']) if d > 0 else (h[k] >= pos['stop'])
             ht = (h[k] >= pos['tgt']) if d > 0 else (l[k] <= pos['tgt'])
             ex = None
