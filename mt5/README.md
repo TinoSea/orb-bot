@@ -108,7 +108,7 @@ Exact replica of the small-account rules on the raw bars (instead of the quick t
 ## H-004 quick start: SD_Scalp (Nasdaq scalp from the video)
 
 1. MetaEditor → File → New → Expert Advisor → name **SD_Scalp** → paste `mt5/SD_Scalp.mq5` → **Compile** (0 errors).
-   The tester log should start with "SD_Scalp version 1.00".
+   The tester log should start with "SD_Scalp version 1.10".
 2. Strategy Tester:
 
 | Setting | Value |
@@ -123,6 +123,23 @@ Exact replica of the small-account rules on the raw bars (instead of the quick t
 
 3. Send Claude the log. Every zone, signal, entry and exit is printed so the first trades can be audited
    against the chart, and SD_journal.csv records the spread paid on every entry and exit.
+
+**Variants (H-004 amendment 1, v1.10).** Run V0 first, then each of these with the same tester settings,
+starting from Defaults and changing only the inputs listed. The first log lines show "SD_Scalp version 1.10"
+and a "Variant:" line confirming the settings.
+
+| Run | Inputs to change |
+|---|---|
+| V0 registered | none |
+| V1 15-second candles | `InpEntrySec` = 15 |
+| V2 EMA direction | `InpTrendEMA` = 20 |
+| V3 London sweep | `InpLondonBias` = true |
+| V4 No consolidation | `InpChopATR` = 1.0 |
+| V5 Her version | all four above |
+| R-a 5-minute zones | `InpZoneTF` = M5 |
+| R-b 50-tick target | `InpTargetPts` = 12.5 |
+
+Delete SD_journal.csv before each run (the bot appends).
 
 ---
 

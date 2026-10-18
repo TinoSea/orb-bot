@@ -24,8 +24,15 @@
 //      after 11:00; flat at 11:30 or after InpMaxHoldMin minutes; no Friday trading.
 //    Skip an entry if spread > InpMaxSpreadFrac x stop. Risk % per trade sizing.
 //
+//  Variants (H-004 amendment 1), all off by default = V0:
+//    V1 InpEntrySec = 15       entry candles of 15 seconds built from ticks (bid)
+//    V2 InpTrendEMA = 20       buys only above EMA(20) of zone-TF closes, sells only below
+//    V3 InpLondonBias = true   London (03:00-08:00 NY) high taken and low not -> sells only; mirror
+//    V4 InpChopATR = 1.0       no new signal if the last 30 one-minute bars span < 1.0 x ATR(14, zone TF)
+//    V5 all of the above
+//
 #property copyright   "orb-bot"
-#property version     "1.00"
+#property version     "1.10"
 #property description "H-004: supply/demand rejection scalp at the NY open (built for US100)."
 #property description "Test only with 'Every tick based on real ticks'."
 
@@ -43,11 +50,20 @@ input group "Entries (1-minute bars)"
 input string InpSessionStartNY = "09:30";  // Signals from (NY) - zones are fixed at this time
 input string InpEntryEndNY     = "11:00";  // No new entries from (NY)
 input string InpFlatNY         = "11:30";  // Close everything at (NY)
-input int    InpArmBars        = 3;        // A trigger stays armed for this many 1-minute bars
+input int    InpEntrySec       = 60;       // Entry candle length in seconds (60 = 1-minute; V1 = 15)
+input int    InpArmBars        = 3;        // A trigger stays armed for this many entry candles
 input double InpStopPts        = 6.25;     // Stop distance in index points (25 NQ ticks)
 input double InpTargetPts      = 6.25;     // Target distance in index points (25 NQ ticks)
 input int    InpMaxHoldMin     = 15;       // Close a trade after this many minutes
 input bool   InpSkipFriday     = true;     // No trading on Fridays
+
+input group "Filters (H-004 amendment 1) - all off = V0"
+input int    InpTrendEMA       = 0;        // V2: EMA period on zone-TF closes (0 = off; 20 for V2)
+input bool   InpLondonBias     = false;    // V3: London sweep bias
+input string InpLondonStartNY  = "03:00";  // V3: London range from (NY)
+input string InpLondonEndNY    = "08:00";  // V3: London range until (NY)
+input double InpChopATR        = 0.0;      // V4: skip if the last InpChopMinutes span < this x ATR(14, zone TF) (0 = off; 1.0 for V4)
+input int    InpChopMinutes    = 30;       // V4: look-back in minutes
 
 input group "Risk (hard limits)"
 input double InpRiskPercent    = 1.0;      // Risk per trade, % of balance
@@ -86,7 +102,19 @@ Zone     g_z[];
 int      g_offsetHrs   = 7;
 int      g_nyDay       = -1;
 bool     g_zonesBuilt  = false;
-datetime g_lastM1      = 0;
+// entry candles built from ticks
+long     g_barKey      = -1;
+double   g_bo = 0.0, g_bh = 0.0, g_bl = 0.0, g_bc = 0.0;
+// filters
+int      g_emaHandle   = INVALID_HANDLE;
+int      g_atrHandle   = INVALID_HANDLE;
+int      g_lonStart    = 0;
+int      g_lonEnd      = 0;
+bool     g_lonValid    = false;
+double   g_lonHi       = 0.0;
+double   g_lonLo       = 0.0;
+bool     g_sweptHi     = false;
+bool     g_sweptLo     = false;
 int      g_sessStart   = 0;
 int      g_entryEnd    = 0;
 int      g_flat        = 0;
@@ -355,14 +383,125 @@ void BuildZones(const datetime nyNow)
      }
   }
 
-// Called on each new closed 1-minute bar inside the signal window.
-void OnClosedM1()
+// V3: London range (InpLondonStartNY..InpLondonEndNY NY) and whether it was taken out before the session.
+void BuildLondon(const datetime nyNow)
   {
-   MqlRates b[];
-   ArraySetAsSeries(b, true);
-   if(CopyRates(_Symbol, PERIOD_M1, 1, 1, b) != 1)
+   g_lonValid = false;
+   g_sweptHi  = false;
+   g_sweptLo  = false;
+   if(!InpLondonBias)
       return;
-   double o = b[0].open, h = b[0].high, l = b[0].low, c = b[0].close;
+   MqlRates r[];
+   ArraySetAsSeries(r, false);
+   int got = CopyRates(_Symbol, PERIOD_M1, 0, 900, r);
+   if(got < 60)
+      return;
+   MqlDateTime s;
+   TimeToStruct(nyNow, s);
+   long todayMid = (long)nyNow - (s.hour * 3600 + s.min * 60 + s.sec);
+   long lonA = todayMid + (long)g_lonStart * 60, lonB = todayMid + (long)g_lonEnd * 60;
+   long sess = todayMid + (long)g_sessStart * 60;
+   double hi = 0.0, lo = 0.0;
+   bool any = false;
+   for(int i = 0; i < got; i++)
+     {
+      long ny = (long)ToNY(r[i].time);
+      if(ny >= lonA && ny < lonB)
+        {
+         if(!any)
+           {
+            hi = r[i].high;
+            lo = r[i].low;
+            any = true;
+           }
+         hi = MathMax(hi, r[i].high);
+         lo = MathMin(lo, r[i].low);
+        }
+     }
+   if(!any)
+      return;
+   g_lonHi = hi;
+   g_lonLo = lo;
+   g_lonValid = true;
+   for(int i = 0; i < got; i++)
+     {
+      long ny = (long)ToNY(r[i].time);
+      if(ny >= lonB && ny < sess)
+        {
+         if(r[i].high > g_lonHi)
+            g_sweptHi = true;
+         if(r[i].low < g_lonLo)
+            g_sweptLo = true;
+        }
+     }
+   if(InpLogZones)
+      PrintFormat("London range %.2f-%.2f; before the open: high taken %s, low taken %s",
+                  g_lonLo, g_lonHi, g_sweptHi ? "yes" : "no", g_sweptLo ? "yes" : "no");
+  }
+
+// V2 + V3: may a signal in direction d be taken?
+bool Allowed(const int d, string &why)
+  {
+   if(InpTrendEMA > 0 && g_emaHandle != INVALID_HANDLE)
+     {
+      double e[];
+      if(CopyBuffer(g_emaHandle, 0, 1, 1, e) == 1)
+        {
+         double c1 = iClose(_Symbol, InpZoneTF, 1);
+         if((d > 0 && c1 <= e[0]) || (d < 0 && c1 >= e[0]))
+           {
+            why = StringFormat("EMA filter (close %.2f vs EMA %.2f)", c1, e[0]);
+            return false;
+           }
+        }
+     }
+   if(InpLondonBias && g_lonValid)
+     {
+      int b = 0;
+      if(g_sweptHi && !g_sweptLo)
+         b = -1;
+      else
+         if(g_sweptLo && !g_sweptHi)
+            b = 1;
+      if(b != 0 && b != d)
+        {
+         why = (b < 0) ? "London bias: sells only" : "London bias: buys only";
+         return false;
+        }
+     }
+   return true;
+  }
+
+// V4: is the market consolidating?
+bool Choppy()
+  {
+   if(InpChopATR <= 0.0 || g_atrHandle == INVALID_HANDLE)
+      return false;
+   MqlRates r[];
+   if(CopyRates(_Symbol, PERIOD_M1, 1, InpChopMinutes, r) != InpChopMinutes)
+      return false;
+   double hi = r[0].high, lo = r[0].low;
+   for(int i = 1; i < InpChopMinutes; i++)
+     {
+      hi = MathMax(hi, r[i].high);
+      lo = MathMin(lo, r[i].low);
+     }
+   double a[];
+   if(CopyBuffer(g_atrHandle, 0, 1, 1, a) != 1 || a[0] <= 0)
+      return false;
+   return (hi - lo) < InpChopATR * a[0];
+  }
+
+// Called on each closed entry candle (InpEntrySec seconds) inside the signal window.
+void OnClosedBar(const double o, const double h, const double l, const double c, const datetime start)
+  {
+   if(g_lonValid)
+     {
+      if(h > g_lonHi)
+         g_sweptHi = true;
+      if(l < g_lonLo)
+         g_sweptLo = true;
+     }
    // 1. zones broken by this close are removed
    for(int i = 0; i < ArraySize(g_z); i++)
      {
@@ -374,32 +513,41 @@ void OnClosedM1()
          if(g_armZone == i)
             Disarm();
          if(InpLogZones)
-            PrintFormat("  zone %d broken by the 1-minute close %.2f", i, c);
+            PrintFormat("  zone %d broken by the candle close %.2f", i, c);
         }
      }
    // 2. a new rejection arms a trigger (newest zone first); an existing armed trigger is kept
    if(g_armDir != 0 || MyPositions() > 0)
       return;
+   bool chop = Choppy();
    double tick = TickSize();
    for(int i = 0; i < ArraySize(g_z); i++)
      {
       if(!g_z[i].active)
          continue;
+      int d = 0;
       if(g_z[i].type < 0 && h >= g_z[i].lo && c < o && c < g_z[i].lo)
-        {
-         g_armDir = -1;
-         g_armPrice = NormPrice(l - tick);
-        }
+         d = -1;
       else
          if(g_z[i].type > 0 && l <= g_z[i].hi && c > o && c > g_z[i].hi)
-           {
-            g_armDir = 1;
-            g_armPrice = NormPrice(h + tick);
-           }
+            d = 1;
+      if(d == 0)
+         continue;
+      string why = "";
+      if(chop)
+         why = "consolidation filter";
+      if(chop || !Allowed(d, why))
+        {
+         if(InpLogZones)
+            PrintFormat("  signal %s at zone %d blocked: %s", (d > 0) ? "BUY" : "SELL", i, why);
+         continue;
+        }
+      g_armDir   = d;
+      g_armPrice = NormPrice((d > 0) ? h + tick : l - tick);
       if(g_armDir != 0)
         {
          g_armZone   = i;
-         g_armExpiry = (datetime)((long)b[0].time + (long)(InpArmBars + 1) * 60);
+         g_armExpiry = (datetime)((long)start + (long)(InpArmBars + 1) * InpEntrySec);
          if(InpLogZones)
             PrintFormat("  SIGNAL %s at zone %d (%.2f-%.2f): rejection bar o%.2f h%.2f l%.2f c%.2f, trigger %.2f",
                         (g_armDir > 0) ? "BUY" : "SELL", i, g_z[i].lo, g_z[i].hi, o, h, l, c, g_armPrice);
@@ -614,7 +762,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   Print("SD_Scalp version 1.00 (H-004). Use 'Every tick based on real ticks' in the tester.");
+   Print("SD_Scalp version 1.10 (H-004 + amendment 1). Use 'Every tick based on real ticks' in the tester.");
    if(InpRiskPercent <= 0.0 || InpRiskPercent > 3.0)
      {
       Print("RiskPercent must be between 0.01 and 3.");
@@ -630,6 +778,34 @@ int OnInit()
       Print("The zone timeframe must be above 1 minute.");
       return INIT_PARAMETERS_INCORRECT;
      }
+   if(InpEntrySec < 5 || InpEntrySec > 60 || 60 % InpEntrySec != 0)
+     {
+      Print("EntrySec must divide 60 (5, 10, 15, 20, 30 or 60).");
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   if(InpTrendEMA < 0 || InpChopATR < 0 || InpChopMinutes < 2)
+     {
+      Print("Check the filter inputs.");
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   g_lonStart = ParseHHMM(InpLondonStartNY);
+   g_lonEnd   = ParseHHMM(InpLondonEndNY);
+   if(InpLondonBias && (g_lonStart < 0 || g_lonEnd <= g_lonStart))
+     {
+      Print("Check the London times (HH:MM, end after start).");
+      return INIT_PARAMETERS_INCORRECT;
+     }
+   if(InpTrendEMA > 0)
+      g_emaHandle = iMA(_Symbol, InpZoneTF, InpTrendEMA, 0, MODE_EMA, PRICE_CLOSE);
+   if(InpChopATR > 0)
+      g_atrHandle = iATR(_Symbol, InpZoneTF, 14);
+   if((InpTrendEMA > 0 && g_emaHandle == INVALID_HANDLE) || (InpChopATR > 0 && g_atrHandle == INVALID_HANDLE))
+     {
+      Print("Could not create the filter indicators.");
+      return INIT_FAILED;
+     }
+   PrintFormat("Variant: entry candles %d s | EMA %d | London bias %s | consolidation filter %.2f x ATR over %d min",
+               InpEntrySec, InpTrendEMA, InpLondonBias ? "on" : "off", InpChopATR, InpChopMinutes);
    g_sessStart = ParseHHMM(InpSessionStartNY);
    g_entryEnd  = ParseHHMM(InpEntryEndNY);
    g_flat      = ParseHHMM(InpFlatNY);
@@ -665,6 +841,40 @@ int OnInit()
    if(MQLInfoInteger(MQL_TESTER) && InpTesterStopAt > 0)
       Print("Out-of-sample lock: the test stops at " + TimeToString(InpTesterStopAt) + " server time.");
    return INIT_SUCCEEDED;
+  }
+
+// Builds entry candles of InpEntrySec seconds from bid ticks; a candle closes when the first
+// tick of the next one arrives.
+void FeedTick()
+  {
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk))
+      return;
+   long key = (long)tk.time / InpEntrySec;
+   if(key != g_barKey)
+     {
+      if(g_barKey >= 0)
+         OnClosedBar(g_bo, g_bh, g_bl, g_bc, (datetime)(g_barKey * InpEntrySec));
+      g_barKey = key;
+      g_bo = tk.bid;
+      g_bh = tk.bid;
+      g_bl = tk.bid;
+      g_bc = tk.bid;
+     }
+   else
+     {
+      g_bh = MathMax(g_bh, tk.bid);
+      g_bl = MathMin(g_bl, tk.bid);
+      g_bc = tk.bid;
+     }
+  }
+
+void OnDeinit(const int reason)
+  {
+   if(g_emaHandle != INVALID_HANDLE)
+      IndicatorRelease(g_emaHandle);
+   if(g_atrHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrHandle);
   }
 
 void OnTick()
@@ -705,20 +915,17 @@ void OnTick()
      {
       if(g_armDir != 0)
          Disarm();
+      g_barKey = -1;
       return;
      }
    if(!g_zonesBuilt)
      {
       BuildZones(nyNow);
+      BuildLondon(nyNow);
       g_zonesBuilt = true;
-      g_lastM1 = iTime(_Symbol, PERIOD_M1, 0);   // first signal bar is the first full bar after the start
+      g_barKey = -1;                              // first candle starts at the first tick after the start
      }
-   datetime m1 = iTime(_Symbol, PERIOD_M1, 0);
-   if(m1 != 0 && m1 != g_lastM1)
-     {
-      g_lastM1 = m1;
-      OnClosedM1();
-     }
+   FeedTick();
    if(MyPositions() == 0)
       TryTrigger(nyNow);
   }
