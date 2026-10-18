@@ -423,6 +423,17 @@ After CFD costs **−0.203R per trade** (PF 0.68); the spread averaged 1.45 poin
 **V1 (15-second candles):** 285 trades, win 38.6%, net −0.240R, **gross −0.013R**, futures estimate −0.103R. Worse than V0.
 **V1+V2 (15 s + EMA; unplanned combination from a settings slip, counted toward the budget):** 175 trades, win 40.6%,
 net −0.196R, **gross +0.031R** (95% range −0.12 to +0.19), futures estimate −0.059R. The trend filter removed 492 signals without creating an edge.
+**V5 (her version):** filters blocked 1,026 signals (EMA 620, London bias 405; the consolidation filter almost never
+bound, so V4 as defined is close to inactive). 70 trades, win 42.9%, net −0.136R, **gross +0.084R** (95% range −0.16 to
++0.33), **futures-cost estimate −0.006R** (PF 0.99). Best of the variants, but break-even at futures costs and losing at CFD costs.
+
+**Decision (2026-10-18): PARK H-004.** Four variants (V0, V1, V1+V2, V5) show no in-sample edge after realistic costs; the best
+is break-even on futures and needs ~0.10R more than it has. At V5's rate (~2 trades a month) the out-of-sample period
+(15.5 months) would give ~35 trades, so pass criterion 1 (≥100 trades) is unreachable by design; running it would spend the
+unseen data for no possible pass. Her reported 65–70% win rate did not appear in any mechanical version (39–43%); whatever edge
+she has is not captured by these rules. The remaining planned variants (V2, V3, V4 alone; 5-minute zones; 50-tick target) are
+not run: changing thresholds now, after seeing results, would be fitting to the data. Not tradable on FP Markets in any version
+(spread = 23% of the stop).
 
 **Even if it passes on (3),** it is only tradable on real futures (another platform and a rewrite), since the CFD
 costs in (1) are part of the test.
