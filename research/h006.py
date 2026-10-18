@@ -53,8 +53,35 @@ class HTFZones:
         return out
 
 
+# ---------------------------------------------------------------- outcome with stress options
+from numba import njit
+
+
+@njit(cache=True)
+def outcome_x(t, mh, ml, mc, i0, side, e, stop, tgt, cap, through, slip):
+    """As h005.outcome, but the target must trade `through` beyond it and a stop fills `slip` worse.
+    R is in units of the planned stop. Same-second stop and target counts as a loss."""
+    n = len(t)
+    last = i0
+    for k in range(i0 + 1, n):
+        if t[k] - t[i0] > cap:
+            break
+        last = k
+        if side > 0:
+            up = mh[k] - e >= tgt + through
+            dn = e - ml[k] >= stop
+        else:
+            up = e - ml[k] >= tgt + through
+            dn = mh[k] - e >= stop
+        if dn:
+            return -(stop + slip) / stop, k, 1 if up else 0
+        if up:
+            return tgt / stop, k, 0
+    return side * (mc[last] - e) / stop, last, 0
+
+
 # ---------------------------------------------------------------- one day
-def run_day(D, Z, C, date, variant):
+def run_day(D, Z, C, date, variant, stop_pts=None, tgt_pts=None, through=0.0, slip=0.0):
     zones = Z.zones(date)
     if not zones:
         return []
@@ -105,14 +132,15 @@ def run_day(D, Z, C, date, variant):
                 spread = D['ao'][i] - D['bo'][i]
                 if hit and spread <= MAX_SPREAD:
                     fill = (max(arm['price'], D['ao'][i]) - spread / 2) if d > 0 else (min(arm['price'], D['bo'][i]) + spread / 2)
-                    stop = STOP
+                    stop = STOP if stop_pts is None else stop_pts
                     if variant == 'V2':
                         stop = (fill - (arm['ext'] - 0.25)) if d > 0 else ((arm['ext'] + 0.25) - fill)
                         if stop < 3 or stop > 12.5:
                             arm = None; i += 1; continue
                     cap = min(900, T1145 - now)
-                    R, k, amb = outcome(t, mh, ml, mc, i, d, fill, stop, stop, cap)
-                    out.append(dict(date=date, t=now, side=d, R=R, amb=amb, secs=int(t[k]) - now, stop=stop,
+                    tgt = stop if tgt_pts is None else tgt_pts
+                    R, k, amb = outcome_x(t, mh, ml, mc, i, d, fill, stop, tgt, cap, through, slip)
+                    out.append(dict(date=date, t=now, side=d, R=R, amb=amb, secs=int(t[k]) - now, stop=stop, tgt=tgt,
                                     tf=arm['zone']['tf'], fill=fill, i=int(i)))
                     trades += 1; losses += R < 0
                     arm['zone']['active'] = False

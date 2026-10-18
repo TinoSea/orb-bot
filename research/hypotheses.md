@@ -609,6 +609,13 @@ estimate (0.5625 points per round trip) PF ≥ 1.2 and expectancy ≥ +0.10R; me
 random-entry null (same days, directions and bracket, entry seconds uniform in 09:30-11:30 outside 09:57-10:03); and
 a **stress case** (target must trade through by 0.25, stop fills 0.25 worse, costs doubled) with expectancy > 0.
 A pass leads to one more run, unchanged, on 2023-01→2025-06 ticks (never used), then an MT5 demo.
+**H-006/1 results (2026-10-18).** Development, full rule: 234 trades, win 22.2%, gross +0.60R, futures +0.46R (PF 1.52),
+stress +0.27R, 99.95th percentile vs random (in-sample: the exit was chosen here).
+**Test, run once (2026-04-01→2026-10-16): 141 trades, win 17.0%, gross +0.23R, futures estimate +0.09R (PF 1.10,
+95% −0.32 to +0.56), 85th percentile vs random (95th = +0.35R), stress −0.10R → FAIL** (PF, expectancy, null and stress).
+**Decision: FAIL.** The 4/25 exit lost most of its development advantage out of sample (+0.46R → +0.09R); with a
+17-22% win rate the result is too noisy to separate from zero, and it turns negative with one tick of slippage.
+Not run on 2023-2025 (a pass was required). No MT5 bot.
 
 ---
 
