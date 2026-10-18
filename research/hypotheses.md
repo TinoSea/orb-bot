@@ -345,8 +345,41 @@ price difference $0.01. Real ticks do show slippage through stops on news gaps (
 a payrolls day). **For gold, real spreads do not erode the result; the amendment 14c cost question is closed for
 gold** (other markets still use the ExportSpreads calibration). The out-of-sample run uses real ticks.
 
+**Cost calibration — amendment 14c closed (2026-10-18, before any universe results).** `mt5/ExportSpreads.mq5`
+(last 90 days, first ticks of each hour) → `research/spread_calibration.md`; multipliers in `h002_costs.csv`: JP225 2.33,
+USDJPY 2.5, AUDUSD/GBPUSD/WTI 2.0, XAGUSD 1.38, XAUUSD 1.1, others 1.0. Blind cost filter rerun: BOND (25%) and
+AGRI/COFFEE (17.7%) excluded as before; all other markets ≤ 4.5%. US2000 missing at broker. **14 markets, 6 sectors.**
+
+**Universe, in-sample 2023-01-01→2025-06-30 (replica, M5, calibrated spreads; gold M1 = M5 = 112 trades, +0.135R):**
+| Market | Trades | Exp. R | PF | | Market | Trades | Exp. R | PF |
+|---|---|---|---|---|---|---|---|---|
+| US500 | 78 | +0.112 | 1.25 | | EURUSD | 134 | −0.006 | 0.99 |
+| US100 | 85 | +0.083 | 1.19 | | USDJPY | 138 | −0.040 | 0.93 |
+| US30 | 92 | +0.154 | 1.37 | | GBPUSD | 123 | −0.249 | 0.64 |
+| UK100 | 95 | −0.225 | 0.64 | | AUDUSD | 127 | +0.017 | 1.03 |
+| GER40 | 103 | +0.215 | 1.45 | | XAUUSD | 112 | +0.135 | 1.27 |
+| JP225 | 100 | −0.013 | 0.98 | | XAGUSD | 89 | −0.270 | 0.57 |
+| WTI | 95 | −0.033 | 0.94 | | BTCUSD | 127 | −0.176 | 0.71 |
+**Portfolio (all trades pooled): 1,498 trades, −0.027R (PF 0.95, 95% −0.09 to +0.03).** Sectors: US equity +0.117R,
+non-US equity −0.002, FX −0.067, metals −0.045, energy −0.033, crypto −0.176.
+**B1 random entries** (`research/h002_baselines.py`; same markets, stop sizes in ATR units, target rule, max hold and
+Friday close; calibration: the simulator reproduces the strategy's own trades, correlation 0.99-1.00, +0.01-0.03R
+generous because swaps are not charged): random mean −0.031R; **strategy at the 55th percentile** (95th = +0.020R).
+Per market: gold 85th, GER40 97th, US30 83rd, US500 80th; silver 2nd, GBPUSD 6th, BTC 8th.
+**B2 simple trend rule:** 13,923 trades, −0.017R pooled (strategy below it).
+**Ablations / robustness (portfolio exp. R; gold exp. R, PF):** A1 no higher-low −0.016 (gold +0.079, 1.15); A2 no
+pullback −0.050 (+0.048, 1.09); A3 no session −0.033 (+0.089, 1.16); R1 swing 3 −0.073 (+0.048, 1.09); R2 zone 0.2
+−0.034 (+0.030, 1.06); R3 zone 0.5 −0.028 (+0.065, 1.13); R4 pessimistic: identical to V0 on M5 bars; R5 spreads ×2
+−0.074 (gold unchanged, +0.135).
+**Item 12 decision rule, applied to in-sample (a pass in-sample is necessary for a pass out of sample):** PF ≥ 1.2 — no
+(0.95); expectancy ≥ +0.15R with CI > 0 — no; beats B1 95th — no (55th); beats B2 — no; PF ≥ 1.0 in ≥ 4 sectors — no
+(1 of 6). **The portfolio fails every criterion in-sample.** Gold's own criteria are out-of-sample ones; in-sample it
+meets the robustness and US500 criteria (R1-R3 PF 1.06-1.13; US500 PF 1.25) but is not distinguishable from random
+entries (85th percentile), and silver, its sector partner, is the worst market (−0.27R).
+
 ### Decision
-*(keep / reject / park, and why)*
+*(pending Tino: whether to spend the single gold out-of-sample run, 2025-07-01→2026-10-16; the portfolio version is
+rejected in-sample and its out-of-sample run would serve no purpose)*
 
 ---
 
