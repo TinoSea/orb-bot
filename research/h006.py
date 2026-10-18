@@ -17,7 +17,7 @@ TFS = {'D': ('1D', 60), 'H4': ('4h', 30), 'H1': ('1h', 10)}      # rule, look-ba
 
 # ---------------------------------------------------------------- higher-time-frame zones
 class HTFZones:
-    def __init__(self, m1):
+    def __init__(self, m1, imp_atr=1.5, lb_scale=1.0):
         srv = m1.reset_index().set_index('time')[['open', 'high', 'low', 'close']]
         self.tf = {}
         for name, (rule, lb) in TFS.items():
@@ -28,7 +28,7 @@ class HTFZones:
             atr_prev = tr.rolling(14, min_periods=5).mean().shift(1)
             dur = pd.Timedelta(rule)
             body, rng = (b.close - b.open).abs(), b.high - b.low
-            imp = (atr_prev > 0) & (rng > 0) & (body >= 1.5 * atr_prev) & (body >= 0.6 * rng)
+            imp = (atr_prev > 0) & (rng > 0) & (body >= imp_atr * atr_prev) & (body >= 0.6 * rng)
             zs = []
             closes = b.close.values
             ends = (b.index + dur).values
@@ -40,7 +40,7 @@ class HTFZones:
                 later = closes[j + 1:]
                 brk = np.where(later < lo)[0] if typ > 0 else np.where(later > hi)[0]
                 broken_at = ends[j + 1 + brk[0]] if len(brk) else np.datetime64('2100-01-01')
-                zs.append(dict(tf=name, type=typ, lo=lo, hi=hi, start=b.index[j], end=ends[j], broken_at=broken_at, lb=lb))
+                zs.append(dict(tf=name, type=typ, lo=lo, hi=hi, start=b.index[j], end=ends[j], broken_at=broken_at, lb=lb * lb_scale))
             self.tf[name] = zs
 
     def zones(self, date):
@@ -113,7 +113,7 @@ def run_day(D, Z, C, date, variant):
                     cap = min(900, T1145 - now)
                     R, k, amb = outcome(t, mh, ml, mc, i, d, fill, stop, stop, cap)
                     out.append(dict(date=date, t=now, side=d, R=R, amb=amb, secs=int(t[k]) - now, stop=stop,
-                                    tf=arm['zone']['tf']))
+                                    tf=arm['zone']['tf'], fill=fill, i=int(i)))
                     trades += 1; losses += R < 0
                     arm['zone']['active'] = False
                     arm = None
