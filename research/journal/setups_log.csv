@@ -1,0 +1,2 @@
+date,time_ny,symbol,side,zone_tf,zone_age,zone_low,zone_high,first_touch,signal,vs_london,taken,why_taken_or_skipped,entry,stop,target,exit,result_R,notes
+2025-10-23,09:56,NQ,short,15m,earlier day,25141.75,25210.25,yes,rejection candle,inside range,yes,EXAMPLE ROW - delete me: rally into Wed supply gap; wick + close back down,25171.50,25177.75,25165.25,25165.25,1.0,

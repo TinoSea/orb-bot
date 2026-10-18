@@ -120,6 +120,22 @@ The plan, stop rules and pass bar are in `research/hypotheses.md` → H-015. Set
    account, plus **`InpAllowLive` = true**. The bot refuses real money without it.
 7. Once a month, send Claude `MQL5/Files/MS_journal.csv`.
 
+## LaKera_Zones: chart helper for practising her method (no trading)
+
+An **indicator**, not a bot: it draws, alerts, and never places a trade. It marks what her 23 Oct 2025 charts showed
+(`research/hypotheses.md`, H-011): Asia box (20:00-03:00 NY), London box (03:00-09:00 NY) with today's London high /
+50% / low, and 5- and 15-minute fair value gaps (strong colour = from earlier days, pale = formed today), kept until a
+candle of the same time frame closes through them. It alerts (and pushes to your phone) the first time price enters an
+earlier-day gap between 09:30 and 11:30 NY.
+
+1. MetaEditor → File → New → **Custom Indicator** → name **LaKera_Zones** → Next/Finish → select all, delete, paste
+   `mt5/LaKera_Zones.mq5` → **Compile** (0 errors).
+2. Open a **US100** chart (any time frame; 1- or 5-minute is easiest to read) and drag **LaKera_Zones** from
+   Navigator → Indicators onto it. Defaults suit US100 (`InpMinGap` = 5 points); for gold use about 1.0.
+3. Hover over a box to see its type, time frame, prices and when it formed.
+4. On the **demo** account, log **every setup you see, taken or skipped**, in `research/journal/setups_log.csv`
+   (opens in Numbers or Excel). After about 100 rows, send it to Claude to see which conditions win.
+
 ## H-004 quick start: SD_Scalp (Nasdaq scalp from the video)
 
 1. MetaEditor → File → New → Expert Advisor → name **SD_Scalp** → paste `mt5/SD_Scalp.mq5` → **Compile** (0 errors).
