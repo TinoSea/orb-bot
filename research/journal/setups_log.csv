@@ -6,3 +6,5 @@ date,time_ny,symbol,side,zone_tf,zone_age,zone_low,zone_high,first_touch,signal,
 2026-10-19,08:20,US100.cash,long,,,,,,,,yes,manual; pre-market; no stop; 1 lot; held 7 min,29564.28,,,29580.33,,+$16.05 (+16.05 pts)
 2026-10-19,08:43,US100.cash,long,,,,,,,,yes,manual; pre-market; no stop set; 2 lots; held 46s,29562.58,,,29568.13,,+$11.10 (+5.55 pts)
 2026-10-19,10:05,US100.cash,long,15m?,,,,,,,yes,manual; bought near green demand zone after wick low ~29470; no stop set; 4 lots; held 24s,29486.88,,,29497.23,,+$41.40 (+10.35 pts)
+2026-10-19,11:02,US100.cash,short,,,,,,,,yes,manual; counter-trend short on up day; no stop; 4 lots; held 18s,29654.68,,,29652.53,,+$8.60 (+2.15 pts)
+2026-10-19,11:06,US100.cash,long,,,,,,,,yes,manual; with trend near day high; no stop; 4 lots; held 13 min,29705.03,,,29716.18,,+$44.60 (+11.15 pts)
