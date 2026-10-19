@@ -1,4 +1,4 @@
-//@version=5
+//@version=6
 // LaKera Zones — chart helper (draws only, never trades). Part of github.com/TinoSea/orb-bot.
 // Marks what La'Kera's 23 Oct 2025 charts showed (research/hypotheses.md, H-011):
 //  - Asia box 20:00-03:00 and London box 03:00-09:00 (New York time), London high / 50% / low
@@ -77,7 +77,7 @@ process(tf, h3, l3, h1, l1, c, t2, tc) =>
             d = dayKey(tc)
             old = d < todayKey
             col = (not old and not showToday) ? color.new(color.white, 100) : colourFor(sup, old)
-            b = box.new(left = t2, top = hi, right = time, bottom = lo, xloc = xloc.bar_time, extend = extend.right,
+            b = box.new(left = t2, top = hi, right = time, bottom = lo, xloc = xloc.bar_time, force_overlay = true, extend = extend.right,
                  border_color = col, bgcolor = col, text = tf, text_size = size.tiny, text_halign = text.align_left,
                  text_color = color.new(color.gray, 30))
             array.push(gBox, b)
@@ -114,7 +114,7 @@ var float aL = na
 if inAsia and not inAsia[1]
     aH := high
     aL := low
-    asiaBox := showSess ? box.new(time, high, time, low, xloc = xloc.bar_time, bgcolor = cAsia, border_color = cAsia,
+    asiaBox := showSess ? box.new(time, high, time, low, xloc = xloc.bar_time, force_overlay = true, bgcolor = cAsia, border_color = cAsia,
          text = "Asia", text_size = size.tiny, text_valign = text.align_top, text_halign = text.align_left) : na
 else if inAsia
     aH := math.max(aH, high)
@@ -132,7 +132,7 @@ if inLon and not inLon[1]
     lH := high
     lL := low
     lStart := time
-    lonBox := showSess ? box.new(time, high, time, low, xloc = xloc.bar_time, bgcolor = cLon, border_color = cLon,
+    lonBox := showSess ? box.new(time, high, time, low, xloc = xloc.bar_time, force_overlay = true, bgcolor = cLon, border_color = cLon,
          text = "London", text_size = size.tiny, text_valign = text.align_top, text_halign = text.align_left) : na
 else if inLon
     lH := math.max(lH, high)
@@ -146,12 +146,12 @@ else if inLon
 if showFib and inLon[1] and not inLon and not na(lStart)
     e = lStart + 14 * 3600000
     m = (lH + lL) / 2
-    line.new(lStart, lH, e, lH, xloc = xloc.bar_time, color = color.gray)
-    line.new(lStart, m,  e, m,  xloc = xloc.bar_time, color = color.gray, style = line.style_dotted)
-    line.new(lStart, lL, e, lL, xloc = xloc.bar_time, color = color.gray)
-    label.new(e, lH, "0 (" + str.tostring(lH, format.mintick) + ")", xloc = xloc.bar_time, style = label.style_none, textcolor = color.gray, size = size.tiny)
-    label.new(e, m,  "0.5 (" + str.tostring(m, format.mintick) + ")", xloc = xloc.bar_time, style = label.style_none, textcolor = color.gray, size = size.tiny)
-    label.new(e, lL, "1 (" + str.tostring(lL, format.mintick) + ")", xloc = xloc.bar_time, style = label.style_none, textcolor = color.gray, size = size.tiny)
+    line.new(lStart, lH, e, lH, xloc = xloc.bar_time, force_overlay = true, color = color.gray)
+    line.new(lStart, m,  e, m,  xloc = xloc.bar_time, force_overlay = true, color = color.gray, style = line.style_dotted)
+    line.new(lStart, lL, e, lL, xloc = xloc.bar_time, force_overlay = true, color = color.gray)
+    label.new(e, lH, "0 (" + str.tostring(lH, format.mintick) + ")", xloc = xloc.bar_time, force_overlay = true, style = label.style_none, textcolor = color.gray, size = size.tiny)
+    label.new(e, m,  "0.5 (" + str.tostring(m, format.mintick) + ")", xloc = xloc.bar_time, force_overlay = true, style = label.style_none, textcolor = color.gray, size = size.tiny)
+    label.new(e, lL, "1 (" + str.tostring(lL, format.mintick) + ")", xloc = xloc.bar_time, force_overlay = true, style = label.style_none, textcolor = color.gray, size = size.tiny)
 
 // ---------------------------------------------------------------- alerts
 inWin = not na(time(timeframe.period, alertWin, TZ))
