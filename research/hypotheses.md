@@ -2,7 +2,7 @@
 
 Each entry is written **before** testing. Results and the decision are added at the end, never edited away.
 
-## Status board (updated 2026-10-18) — start here
+## Status board (updated 2026-10-20) — start here
 
 Search this file for the code (e.g. "H-002") to read the full entry: idea, exact rules, results, decision.
 
@@ -25,6 +25,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
 | H-018 | BOS model (break of structure, zone tap, 2R) | failed | −0.14R after costs; worse than random (4th pct) |
 | H-019 | Build-up breakout at levels, with trend, 2R | failed | only 4 trades in 9 months; build-up filter too strict |
+| H-020 | AMD at the NY open: sweep/gap tap 09:25–09:33, then reverse (GS Trades video) | **registered 2026-10-20** | not run yet |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
@@ -1255,3 +1256,43 @@ Registered 2026-10-18, before any data was run. Code: research/h019.py. US100 1-
 4 trades on 4 days; 3 winners, 1 loser; +1.21R after costs; random entries 81st percentile. One code fix before the run counted: the position key was `dir`, not `d`. No rule changed.
 ### Decision
 **Fail: fewer than 100 trades.** Four tight 5-minute candles spanning at most 0.75 ATR almost never form next to a level with the trend agreeing. Four trades say nothing either way. The final period stays unspent. Any looser version is a new hypothesis (H-020), registered first.
+
+
+## H-020: AMD at the New York open — sweep or gap tap, then reverse (GS Trades video)
+Registered 2026-10-20, before any H-020 code was run on market data. Code: `research/h020.py`. US100 1-minute bars, New York time.
+(The H-019 decision mentioned "H-020" for a looser H-019; that was never registered, so the number is used here and a looser H-019 would be H-021.)
+
+**Source.** A short video by "GS Trades" (shared by Tino, 2026-10-20), sold as "accumulation, manipulation, distribution" (AMD):
+(A) in the 5 minutes before the open, if price runs into an untapped fair value gap or sweeps a swing high/low, "almost
+guaranteed" to reverse — short with the stop at the high and hold through the open; (B) more often, 09:30–09:33 sweeps a gap or
+liquidity point and you enter the reversal "the second it does that". He reports a 17-day winning streak. No target, size,
+swing definition or time exit is given; those below are ours, fixed now. Failing rejects **this rule set**, not every reading of AMD.
+His "9:00 Eastern Standard" is read as the 09:30 open on the New York clock (EDT in summer); the data is already on that clock.
+
+**Exact rules**
+- **Liquidity (both scenarios):** previous NYSE day 09:30–16:00 high and low; Asia 20:00–03:00 and London 03:00–09:00 high and low
+  (H-011's sessions); 5-minute swing highs/lows (high above the 2 bars either side; mirrored for lows) formed since the previous day's 09:30.
+  A level counts only if no 1-minute price has gone beyond it since it formed (untaken), checked at the start of each window.
+- **Untapped fair value gaps:** 5-minute three-candle gaps ≥ 5 points (H-011's definition) formed in the last 5 trading days, that no
+  1-minute bar has entered since the third candle closed. A gap above price is a sell line at its lower edge; below price, a buy line at its upper edge.
+- **Scenario A (pre-open, bars 09:25–09:29):** the first bar whose high goes above an untaken high, or reaches a sell line, → **short at that bar's close**;
+  mirrored for lows → long. Both in one bar → no trade that day.
+- **Scenario B (bars 09:30–09:32, only if A did not trade):** levels re-checked at 09:30. Once a bar in this window goes beyond an untaken high (or reaches
+  a sell line), the first bar up to 09:32 that **closes back below that line** → short at its close (mirrored for longs). Both in one bar → none.
+- **Stop:** 0.25 beyond the highest high (lowest low) of the window up to the entry bar ("stop at the high"); at least 5 points from entry.
+- **Target 2R.** Otherwise out at the 10:29 bar's close (10:30). On 1-minute bars a bar that touches both stop and target counts as a stop.
+- One trade a day, weekdays, skip days with any 1-minute bar missing from 09:20 to 09:35.
+- **Costs:** futures estimate 0.5625 points per round trip. Stress: stops 0.25 worse, costs doubled. **Also reported:** FP Markets CFD cost 1.45 points
+  (the average open spread measured in H-004), because that is where Tino trades US100 today.
+
+**Development** 2025-07-01→2026-03-31, seen once, no changes after (bug fixes only, recorded here).
+**Final, once:** 2023-01-01→2025-06-30, only if development futures expectancy is above zero. Both periods were used by other rules (H-018, H-019): near-clean.
+**Pass (final, all):** ≥ 100 trades; futures PF ≥ 1.2 and expectancy ≥ +0.10R; mean gross R above the 95th percentile of a **random-direction** null
+(same days, entry bars, stops, 2R target, exit time; only the direction is a coin flip — this tests the video's actual claim, that the sweep tells you
+which way price goes next); stress expectancy > 0.
+**Reported, not part of the verdict:** A vs B; longs vs shorts; gap vs liquidity triggers; win rate against the "almost guaranteed" claim (break-even
+for 2R after costs is about 34-35%); the hold-to-10:30 version with no target; each year.
+**Budget:** this one rule set (20th registered hypothesis). Any change after seeing development results is a new hypothesis.
+A pass earns a forward demo with a stop on every trade, not money.
+### Results
+### Decision
