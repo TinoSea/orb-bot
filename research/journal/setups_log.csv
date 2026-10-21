@@ -11,3 +11,4 @@ date,time_ny,symbol,side,zone_tf,zone_age,zone_low,zone_high,first_touch,signal,
 2026-10-19,12:11,US100.cash,long,,,,,,,,yes,manual; after her window; no stop; 4 lots; held 13s,29709.38,,,29710.43,,+$4.20 (+1.05 pts)
 2026-10-20,10:32,US100.cash,short,,,,,,,,yes,manual; in window; no stop; 4 lots; held 18s,29673.83,,,29667.68,,+$24.60 (+6.15 pts)
 2026-10-21,09:45,US100.cash,long,,,29600,29612,,rejection after spike into green zone,,yes,manual; demand rejection in window; entered ~55 pts above zone after recovery candle; no stop; 4 lots; held 8s,29665.58,,,29680.13,,+$58.20 (+14.55 pts)
+2026-10-21,10:04,US100.cash,short,,,,,,upper-wick rejection at spike high (no red zone visible),,yes,manual; no stop; 4 lots; held 13s,29731.43,,,29716.88,,+$58.20 (+14.55 pts)
