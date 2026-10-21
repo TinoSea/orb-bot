@@ -2,7 +2,7 @@
 
 Each entry is written **before** testing. Results and the decision are added at the end, never edited away.
 
-## Status board (updated 2026-10-20) — start here
+## Status board (updated 2026-10-21) — start here
 
 Search this file for the code (e.g. "H-002") to read the full entry: idea, exact rules, results, decision.
 
@@ -25,7 +25,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-016 | Her zones + her own bracket (12.5/16.25) | failed | beats random (98.8th pct) but −0.016R after costs |
 | H-018 | BOS model (break of structure, zone tap, 2R) | failed | −0.14R after costs; worse than random (4th pct) |
 | H-019 | Build-up breakout at levels, with trend, 2R | failed | only 4 trades in 9 months; build-up filter too strict |
-| H-020 | AMD at the NY open: sweep/gap tap 09:25–09:33, then reverse (GS Trades video) | **registered 2026-10-20** | not run yet |
+| H-020 | AMD at the NY open: sweep/gap tap 09:25–09:33, then reverse (GS Trades video) | failed | 24% win at 2R, −0.34R after costs; 5th pct vs coin-flip direction |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 
@@ -1294,5 +1294,15 @@ which way price goes next); stress expectancy > 0.
 for 2R after costs is about 34-35%); the hold-to-10:30 version with no target; each year.
 **Budget:** this one rule set (20th registered hypothesis). Any change after seeing development results is a new hypothesis.
 A pass earns a forward demo with a stop on every trade, not money.
-### Results
-### Decision
+### Results (development, run once 2026-10-21)
+Data: FP Markets US100 M1 export (`orb_export/US100_M1.csv`, 2025-06-30 → 2026-10-16). Code unchanged since registration.
+**148 trades on 194 days, win 24.3% (2R needs ≥ 33.3% before costs), gross −0.27R, futures estimate −0.34R (PF 0.58, 95% −0.55 to −0.12),
+median stop 7.3 points.** CFD costs (1.45 pts): −0.46R. Stress: −0.44R. Exits: 112 stops, 36 targets. Longest winning streak: 3.
+**Random direction** (same entries, stops, target, exit time; coin-flip side): mean −0.12R, 95th pct +0.04R → the rule sits at the
+**5th percentile**: fading the sweep did worse than a coin flip on direction.
+Breakdown (none part of the verdict): pre-open A 78 trades −0.48R; open B 70 trades −0.18R; longs and shorts the same (−0.34R each);
+gap triggers 33 trades −0.54R, swing 91 −0.35R, London 22 +0.04R (too few to mean anything); 2025 −0.42R, 2026 −0.21R.
+Hold to 10:30 with no target: 10% win, +0.20R after costs, 95% range −0.59 to +1.23 — a handful of large moves, indistinguishable from zero.
+### Decision (2026-10-21): FAIL at development; the 2023-2025 final run is not spent (as registered).
+A sweep or gap tap at 09:25-09:33 happened on three days in four and did not mark a reversal; the "almost guaranteed" reversal is not in
+2025-26 Nasdaq data under these rules. Any other reading (another target, a confirmation candle, fewer levels) is a new hypothesis.

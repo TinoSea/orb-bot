@@ -1,0 +1,204 @@
+{
+ "trades": 148,
+ "win_rate": 0.243,
+ "gross_R": -0.27,
+ "net_R": -0.342,
+ "net_PF": 0.58,
+ "net_R_ci95": [
+  -0.546,
+  -0.121
+ ],
+ "median_stop": 7.31,
+ "days_with_data": 194,
+ "period": [
+  "2025-07-01",
+  "2026-03-31"
+ ],
+ "exits": {
+  "stop": 112,
+  "target": 36
+ },
+ "stress": {
+  "trades": 148,
+  "win_rate": 0.243,
+  "gross_R": -0.296,
+  "net_R": -0.44,
+  "net_PF": 0.51,
+  "net_R_ci95": [
+   -0.647,
+   -0.219
+  ],
+  "median_stop": 7.31
+ },
+ "null_mean": -0.116,
+ "null_p95": 0.037,
+ "percentile_vs_null": 0.052,
+ "verdict": "FAIL (>=100 True, PF False, exp False, null False, stress False)",
+ "cfd_cost": {
+  "trades": 148,
+  "win_rate": 0.243,
+  "gross_R": -0.27,
+  "net_R": -0.455,
+  "net_PF": 0.497,
+  "net_R_ci95": [
+   -0.662,
+   -0.236
+  ],
+  "median_stop": 7.31
+ },
+ "hold_no_target": {
+  "trades": 148,
+  "win_rate": 0.101,
+  "gross_R": 0.271,
+  "net_R": 0.199,
+  "net_PF": 1.206,
+  "net_R_ci95": [
+   -0.593,
+   1.234
+  ],
+  "median_stop": 7.31
+ },
+ "by": {
+  "scenario": {
+   "A": {
+    "trades": 78,
+    "win_rate": 0.205,
+    "gross_R": -0.385,
+    "net_R": -0.484,
+    "net_PF": 0.447,
+    "net_R_ci95": [
+     -0.752,
+     -0.213
+    ],
+    "median_stop": 5.0
+   },
+   "B": {
+    "trades": 70,
+    "win_rate": 0.286,
+    "gross_R": -0.143,
+    "net_R": -0.184,
+    "net_PF": 0.754,
+    "net_R_ci95": [
+     -0.491,
+     0.162
+    ],
+    "median_stop": 20.75
+   }
+  },
+  "side": {
+   "short": {
+    "trades": 74,
+    "win_rate": 0.243,
+    "gross_R": -0.27,
+    "net_R": -0.345,
+    "net_PF": 0.578,
+    "net_R_ci95": [
+     -0.632,
+     -0.054
+    ],
+    "median_stop": 6.43
+   },
+   "long": {
+    "trades": 74,
+    "win_rate": 0.243,
+    "gross_R": -0.27,
+    "net_R": -0.339,
+    "net_PF": 0.582,
+    "net_R_ci95": [
+     -0.625,
+     -0.025
+    ],
+    "median_stop": 8.25
+   }
+  },
+  "trigger": {
+   "asia": {
+    "trades": 1,
+    "win_rate": 0.0,
+    "gross_R": -1.0,
+    "net_R": -1.027,
+    "net_PF": 0.0,
+    "net_R_ci95": [
+     -1.027,
+     -1.027
+    ],
+    "median_stop": 20.5
+   },
+   "fvg": {
+    "trades": 33,
+    "win_rate": 0.182,
+    "gross_R": -0.455,
+    "net_R": -0.535,
+    "net_PF": 0.397,
+    "net_R_ci95": [
+     -0.905,
+     -0.083
+    ],
+    "median_stop": 5.0
+   },
+   "london": {
+    "trades": 22,
+    "win_rate": 0.364,
+    "gross_R": 0.091,
+    "net_R": 0.035,
+    "net_PF": 1.051,
+    "net_R_ci95": [
+     -0.521,
+     0.598
+    ],
+    "median_stop": 15.82
+   },
+   "prev_day": {
+    "trades": 1,
+    "win_rate": 0.0,
+    "gross_R": -1.0,
+    "net_R": -1.113,
+    "net_PF": 0.0,
+    "net_R_ci95": [
+     -1.113,
+     -1.113
+    ],
+    "median_stop": 5.0
+   },
+   "swing": {
+    "trades": 91,
+    "win_rate": 0.242,
+    "gross_R": -0.275,
+    "net_R": -0.347,
+    "net_PF": 0.574,
+    "net_R_ci95": [
+     -0.61,
+     -0.083
+    ],
+    "median_stop": 7.25
+   }
+  },
+  "year": {
+   "2025": {
+    "trades": 95,
+    "win_rate": 0.221,
+    "gross_R": -0.337,
+    "net_R": -0.415,
+    "net_PF": 0.508,
+    "net_R_ci95": [
+     -0.667,
+     -0.15
+    ],
+    "median_stop": 5.0
+   },
+   "2026": {
+    "trades": 53,
+    "win_rate": 0.283,
+    "gross_R": -0.151,
+    "net_R": -0.211,
+    "net_PF": 0.723,
+    "net_R_ci95": [
+     -0.555,
+     0.179
+    ],
+    "median_stop": 9.75
+   }
+  }
+ },
+ "longest_win_streak": 3
+}
