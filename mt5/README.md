@@ -341,3 +341,10 @@ Send it to Claude for the weekly review.
 ---
 
 *Not financial advice. A backtest is evidence, not a promise.*
+
+## LK_Signals (indicator, draws only)
+Arrow + red stop box + green target box (TP1 1R, TP2 1.3R, TP3 2R) at each rejection candle on an
+earlier-day 5/15-minute gap. Signals only on closed candles (no repainting). Panel top-left scores
+every signal: how often each target was hit before the stop, and average R after costs.
+Install: MetaEditor -> File -> Open LK_Signals.mq5 -> Compile (F7) -> drag onto a US100.cash M1 chart.
+Settings: Smallest gap 5 for US100, 2 for US500, 1 for gold; Server minus NY = 6 from 26 to 30 Oct.
