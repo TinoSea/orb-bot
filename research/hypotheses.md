@@ -28,6 +28,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-020 | AMD at the NY open: sweep/gap tap 09:25–09:33, then reverse (GS Trades video) | failed | 24% win at 2R, −0.34R after costs; 5th pct vs coin-flip direction |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
+| **H-022** | **H-017 rules on MNQ futures, signals 08:00-14:00 NY** | **registered 2026-10-22, not started** | window never tested; forward on Sim / demo |
 
 ---
 
@@ -1181,6 +1182,30 @@ stops and targets: +0.028R mean → the rule is at the **4th percentile** (worse
 10 time. Longs 172, shorts 137.
 ### Decision (2026-10-19): FAIL at development; the 2023-2025 final run is not spent (as registered). Entering on the tap
 of the last opposite candle after a 5-minute break of structure did worse than random timing in the same direction.
+
+---
+
+## H-022: LK rules on futures (MNQ), signals 08:00-14:00 New York, forward on Sim / demo
+
+**Registered:** 2026-10-22, before any trade or test on this window.  **Status:** REGISTERED, not started.
+**Why.** Tino wants the bot on a FundedNext futures account (Tradovate) and chose a wider signal window, 08:00-14:00 NY,
+instead of H-017's 09:30-09:57. Nothing in H-011..H-017 tested this window: 09:30-11:30 won 45.1% (break-even 45.4%
+after futures costs) and only the 09:30-10:00 slice looked better (49.1%). The pre-market (08:00-09:30) and midday
+(11:30-14:00) have no record at all, so this is a new hypothesis, tested forward only.
+**Rules.** `futures/ninjatrader/LKForward.cs` (or `futures/tradovate/lk_tradovate.py`, same entries) v1.00-futures at
+defaults: H-017's zones, first try only, 15-second rejection candle, 45 s trigger 0.25 beyond it, stop 12.5 / target 16.25,
+15-minute cap, ≤ 3 trades and ≤ 2 losses a day, no Fridays; **signals 08:00-14:00 NY, flat 14:30**; MNQ last-trade prices;
+$100 risk (4 MNQ), max 10 contracts, Maximum Loss Limit guard. Sim or Tradovate demo first; a FundedNext challenge
+only after the verdict below.
+**Costs.** About 0.04-0.05R a trade (commission ≈ $1 per contract round trip, 1 tick of slippage on the stop), so
+break-even is about **45.4%** wins at 1.3R.
+**Stop early** if after 50 trades the win rate is below 37%.
+**Verdict at 150 trades:** win rate ≥ 47% and net profit after costs > 0 → continue to 300 before money; < 43% → close;
+in between → continue to 300. Also report the win rate by hour (08-09:30, 09:30-11:30, 11:30-14:00) without
+changing the rule mid-test.
+**Records:** `LK_futures_journal.csv` (NinjaTrader user folder, or `futures/tradovate/journal/`), sent to Claude monthly.
+### Results
+### Decision
 
 ---
 

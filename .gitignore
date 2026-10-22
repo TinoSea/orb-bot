@@ -19,3 +19,9 @@ equity.png
 
 # Exported market data (large; kept on your Mac, not in git)
 data/
+
+# Futures bot: your settings (password) and its journal
+futures/tradovate/lk.env
+futures/tradovate/journal/
+futures/ninjatrader/tests/*.csv
+futures/ninjatrader/tests/*.exe
