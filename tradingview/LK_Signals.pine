@@ -1,0 +1,244 @@
+//@version=6
+// LK Signals - chart helper (draws only, never trades). github.com/TinoSea/orb-bot
+// Rejection candle at an earlier-day 5/15-minute fair value gap (same zones as "LaKera Zones"):
+//  - triangle on the signal candle, only after it has CLOSED (no repainting)
+//  - stop-entry just beyond the candle, valid for N bars
+//  - red box = entry to stop (past the wick); green box = entry to TP3; dotted lines at TP1 and TP2
+//  - score table: for each target, how often it was hit before the stop, and average R after costs
+// Buys only at demand (green) zones, sells only at supply (red) zones. New York time, DST handled.
+// Use with Tradovate: connect your Tradovate account in TradingView's Trading Panel and trade NQ1!/MNQ1!.
+indicator("LK Signals", overlay = true, max_boxes_count = 500, max_lines_count = 500, max_labels_count = 500)
+
+minGap    = input.float(5.0, "Smallest gap (NQ/US100 5, ES/US500 2, gold 1)", group = "Zones")
+zoneDays  = input.int(7, "Use gaps formed in the last N calendar days", minval = 1, group = "Zones")
+firstOnly = input.bool(true, "One signal per zone (first try only)", group = "Zones")
+wickBody  = input.float(1.0, "Wick at least this x the body", group = "Signal")
+sigSess   = input.session("0930-1130", "Signal window (New York)", group = "Signal")
+flatStr   = input.string("15:55", "Close open trades at (New York, HH:MM)", group = "Signal")
+maxDay    = input.int(3, "Max signals a day", group = "Signal")
+noFri     = input.bool(false, "Skip Fridays", group = "Signal")
+entryOff  = input.float(0.25, "Stop-entry offset beyond the candle", group = "Order")
+stopBuf   = input.float(2.5, "Stop this far past the wick", group = "Order")
+validBars = input.int(2, "Entry valid for N bars", minval = 1, group = "Order")
+tp1       = input.float(1.0, "TP1 (R)", group = "Order")
+tp2       = input.float(1.3, "TP2 (R) - result shown on chart", group = "Order")
+tp3       = input.float(2.0, "TP3 (R)", group = "Order")
+costPts   = input.float(0.6, "Costs per trade, points (scoring only)", group = "Order")
+acct      = input.float(10000, "Account size for contract suggestion", group = "Risk")
+riskPct   = input.float(1.0, "Risk % per trade", group = "Risk")
+
+TZ = "America/New_York"
+dayKey(t) => year(t, TZ) * 10000 + month(t, TZ) * 100 + dayofmonth(t, TZ)
+today  = dayKey(time)
+flatM  = int(str.tonumber(str.substring(flatStr, 0, 2))) * 60 + int(str.tonumber(str.substring(flatStr, 3, 5)))
+closeM = hour(time_close, TZ) * 60 + minute(time_close, TZ)
+
+// ---------------------------------------------------------------- zones (closed 5m / 15m candles, no repaint)
+htf() => [high[1], low[1], high[3], low[3], close[1], time_close[1]]
+[h3a, l3a, h1a, l1a, c5, tc5]   = request.security(syminfo.tickerid, "5",  htf(), lookahead = barmerge.lookahead_on)
+[h3b, l3b, h1b, l1b, c15, tc15] = request.security(syminfo.tickerid, "15", htf(), lookahead = barmerge.lookahead_on)
+
+var array<float>  zLo   = array.new<float>()
+var array<float>  zHi   = array.new<float>()
+var array<bool>   zSup  = array.new<bool>()
+var array<string> zTf   = array.new<string>()
+var array<int>    zT    = array.new<int>()
+var array<int>    zDay  = array.new<int>()
+var array<bool>   zUsed = array.new<bool>()
+
+removeZone(i) =>
+    array.remove(zLo, i)
+    array.remove(zHi, i)
+    array.remove(zSup, i)
+    array.remove(zTf, i)
+    array.remove(zT, i)
+    array.remove(zDay, i)
+    array.remove(zUsed, i)
+
+process(tf, h3, l3, h1, l1, c, tc) =>
+    if array.size(zLo) > 0
+        for i = array.size(zLo) - 1 to 0
+            if array.get(zTf, i) == tf
+                s = array.get(zSup, i)
+                if (s and c > array.get(zHi, i)) or (not s and c < array.get(zLo, i))
+                    removeZone(i)
+    sup = h3 < l1
+    dem = l3 > h1
+    if (sup or dem) and not na(tc)
+        lo = sup ? h3 : h1
+        hi = sup ? l1 : l3
+        if hi - lo >= minGap
+            array.push(zLo, lo)
+            array.push(zHi, hi)
+            array.push(zSup, sup)
+            array.push(zTf, tf)
+            array.push(zT, tc)
+            array.push(zDay, dayKey(tc))
+            array.push(zUsed, false)
+
+if ta.change(tc15) != 0
+    process("15", h3b, l3b, h1b, l1b, c15, tc15)
+if ta.change(tc5) != 0
+    process("5", h3a, l3a, h1a, l1a, c5, tc5)
+if ta.change(today) != 0 and array.size(zLo) > 0
+    for i = array.size(zLo) - 1 to 0
+        if array.get(zT, i) < time - zoneDays * 86400000
+            removeZone(i)
+
+// ---------------------------------------------------------------- state
+var lv   = array.from(tp1, tp2, tp3)
+var win  = array.from(0, 0, 0)
+var loss = array.from(0, 0, 0)
+var tmo  = array.from(0, 0, 0)
+var sumR = array.from(0.0, 0.0, 0.0)
+var res  = array.from(true, true, true)
+var int   sigs = 0
+var int   nofill = 0
+var int   curDay = 0
+var int   dayCnt = 0
+var int   pDir = 0
+var float pTrig = na
+var float pStop = na
+var int   pLeft = 0
+var int   tDir = 0
+var float tFill = na
+var float tStop = na
+var float tRisk = na
+var int   tDay = 0
+var box   bS = na
+var box   bT = na
+var line  l1 = na
+var line  l2 = na
+
+inWin = not na(time(timeframe.period, sigSess, TZ))
+isFri = dayofweek(time, TZ) == dayofweek.friday
+
+if barstate.isconfirmed
+    // 1) manage an open trade
+    if tDir != 0
+        newDay = today != tDay
+        for k = 0 to 2
+            if not array.get(res, k)
+                L  = array.get(lv, k)
+                tp = tFill + tDir * L * tRisk
+                hitS = tDir > 0 ? low <= tStop : high >= tStop
+                hitT = tDir > 0 ? high >= tp : low <= tp
+                float R = na
+                if newDay
+                    R := tDir * (open - tFill) / tRisk
+                else if hitS
+                    R := -1.0
+                else if hitT
+                    R := L
+                else if closeM >= flatM
+                    R := tDir * (close - tFill) / tRisk
+                if not na(R)
+                    array.set(res, k, true)
+                    if R >= L - 1e-9
+                        array.set(win, k, array.get(win, k) + 1)
+                    else if R <= -1 + 1e-9
+                        array.set(loss, k, array.get(loss, k) + 1)
+                    else
+                        array.set(tmo, k, array.get(tmo, k) + 1)
+                    array.set(sumR, k, array.get(sumR, k) + R - costPts / tRisk)
+                    if k == 1
+                        label.new(bar_index, tFill + tDir * tp3 * tRisk, str.format("{0,number,+0.00;-0.00}R", R),
+                             style = label.style_none, textcolor = R > 0 ? color.lime : color.red, size = size.small)
+        box.set_right(bS, bar_index)
+        box.set_right(bT, bar_index)
+        line.set_x2(l1, bar_index)
+        line.set_x2(l2, bar_index)
+        if array.get(res, 0) and array.get(res, 1) and array.get(res, 2)
+            tDir := 0
+
+    // 2) pending stop-entry
+    else if pDir != 0
+        filled = pDir > 0 ? high >= pTrig : low <= pTrig
+        if filled
+            tDir  := pDir
+            tFill := pDir > 0 ? math.max(pTrig, open) : math.min(pTrig, open)
+            tStop := pStop
+            tRisk := tDir * (tFill - tStop)
+            tDay  := today
+            pDir  := 0
+            if tRisk <= 0
+                tDir := 0
+            else
+                array.set(res, 0, false)
+                array.set(res, 1, false)
+                array.set(res, 2, false)
+                bS := box.new(bar_index, tFill, bar_index, tStop, border_color = color.new(color.red, 60), bgcolor = color.new(color.red, 80))
+                bT := box.new(bar_index, tFill, bar_index, tFill + tDir * tp3 * tRisk, border_color = color.new(color.green, 60), bgcolor = color.new(color.green, 80))
+                l1 := line.new(bar_index, tFill + tDir * tp1 * tRisk, bar_index, tFill + tDir * tp1 * tRisk, color = color.gray, style = line.style_dotted)
+                l2 := line.new(bar_index, tFill + tDir * tp2 * tRisk, bar_index, tFill + tDir * tp2 * tRisk, color = color.white, style = line.style_dotted)
+                // fill bar: stop only (cautious)
+                if (tDir > 0 and low <= tStop) or (tDir < 0 and high >= tStop)
+                    for k = 0 to 2
+                        array.set(res, k, true)
+                        array.set(loss, k, array.get(loss, k) + 1)
+                        array.set(sumR, k, array.get(sumR, k) - 1 - costPts / tRisk)
+                    label.new(bar_index, tFill + tDir * tp3 * tRisk, "-1.00R", style = label.style_none, textcolor = color.red, size = size.small)
+                    tDir := 0
+        else
+            pLeft -= 1
+            if pLeft <= 0
+                pDir := 0
+                nofill += 1
+
+    // 3) new signal on this closed candle
+    if tDir == 0 and pDir == 0 and inWin and not (noFri and isFri)
+        if today != curDay
+            curDay := today
+            dayCnt := 0
+        if dayCnt < maxDay and array.size(zLo) > 0
+            body = math.abs(close - open)
+            lw = math.min(open, close) - low
+            uw = high - math.max(open, close)
+            int dir = 0
+            for z = 0 to array.size(zLo) - 1
+                if dir == 0 and not (firstOnly and array.get(zUsed, z)) and array.get(zDay, z) < today
+                    lo = array.get(zLo, z)
+                    hi = array.get(zHi, z)
+                    if not array.get(zSup, z) and low <= hi and close >= lo and lw > 0 and lw >= wickBody * body and lw >= uw
+                        dir := 1
+                        array.set(zUsed, z, true)
+                    else if array.get(zSup, z) and high >= lo and close <= hi and uw > 0 and uw >= wickBody * body and uw >= lw
+                        dir := -1
+                        array.set(zUsed, z, true)
+            if dir != 0
+                sigs += 1
+                dayCnt += 1
+                pDir  := dir
+                pTrig := dir > 0 ? high + entryOff : low - entryOff
+                pStop := dir > 0 ? low - stopBuf : high + stopBuf
+                pLeft := validBars
+                label.new(bar_index, dir > 0 ? low : high, "", style = dir > 0 ? label.style_triangleup : label.style_triangledown,
+                     yloc = dir > 0 ? yloc.belowbar : yloc.abovebar, color = dir > 0 ? color.lime : color.red, size = size.small)
+                rp = math.abs(pTrig - pStop)
+                cts = math.floor(acct * riskPct / 100 / (rp * syminfo.pointvalue))
+                alert(str.format("{0} {1} STOP at {2}, SL {3}, TP1 {4}, TP2 {5}, TP3 {6}. Risk {7} pts = {8} contracts at {9}%",
+                     syminfo.ticker, dir > 0 ? "BUY" : "SELL", str.tostring(pTrig, format.mintick), str.tostring(pStop, format.mintick),
+                     str.tostring(pTrig + dir * tp1 * rp, format.mintick), str.tostring(pTrig + dir * tp2 * rp, format.mintick),
+                     str.tostring(pTrig + dir * tp3 * rp, format.mintick), str.tostring(rp, "#.##"), cts, riskPct), alert.freq_once_per_bar_close)
+
+// ---------------------------------------------------------------- score table
+var table tb = table.new(position.top_right, 6, 5, bgcolor = color.new(color.black, 20), border_width = 1)
+if barstate.islast
+    hdr = array.from("Target", "Hit", "Stop", "Time", "Win %", "Avg R")
+    for c = 0 to 5
+        table.cell(tb, c, 0, array.get(hdr, c), text_color = color.white, text_size = size.small)
+    for k = 0 to 2
+        w = array.get(win, k)
+        s = array.get(loss, k)
+        t = array.get(tmo, k)
+        n = w + s + t
+        table.cell(tb, 0, k + 1, str.format("TP{0} {1}R", k + 1, array.get(lv, k)), text_color = color.white, text_size = size.small)
+        table.cell(tb, 1, k + 1, str.tostring(w), text_color = color.lime, text_size = size.small)
+        table.cell(tb, 2, k + 1, str.tostring(s), text_color = color.red, text_size = size.small)
+        table.cell(tb, 3, k + 1, str.tostring(t), text_color = color.gray, text_size = size.small)
+        table.cell(tb, 4, k + 1, n > 0 ? str.tostring(100.0 * w / n, "#") + "%" : "-", text_color = color.white, text_size = size.small)
+        avg = n > 0 ? array.get(sumR, k) / n : 0.0
+        table.cell(tb, 5, k + 1, n > 0 ? str.format("{0,number,+0.00;-0.00}", avg) : "-", text_color = avg > 0 ? color.lime : color.red, text_size = size.small)
+    table.cell(tb, 0, 4, str.format("Signals {0}, no fill {1}{2}", sigs, nofill, (win.get(1) + loss.get(1) + tmo.get(1)) < 30 ? " - under 30 trades: too few to judge" : ""),
+         text_color = color.gray, text_size = size.small)
+    table.merge_cells(tb, 0, 4, 5, 4)
