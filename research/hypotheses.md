@@ -2,7 +2,7 @@
 
 Each entry is written **before** testing. Results and the decision are added at the end, never edited away.
 
-## Status board (updated 2026-10-21) — start here
+## Status board (updated 2026-10-24) — start here
 
 Search this file for the code (e.g. "H-002") to read the full entry: idea, exact rules, results, decision.
 
@@ -29,6 +29,8 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 | **H-022** | **H-017 rules on MNQ futures, signals 08:00-14:00 NY** | **registered 2026-10-22, not started** | window never tested; forward on Sim / demo |
+| H-023 | ICT 2022 NY model: overnight-range sweep → 5-min MSS → FVG entry, target range end | registered 2026-10-24 | not run yet |
+| H-024 | ICT macro windows (HH:50–HH:10) vs rest of the hour (descriptive) | registered 2026-10-24 | not run yet |
 
 ---
 
@@ -1331,3 +1333,65 @@ Hold to 10:30 with no target: 10% win, +0.20R after costs, 95% range −0.59 to 
 ### Decision (2026-10-21): FAIL at development; the 2023-2025 final run is not spent (as registered).
 A sweep or gap tap at 09:25-09:33 happened on three days in four and did not mark a reversal; the "almost guaranteed" reversal is not in
 2025-26 Nasdaq data under these rules. Any other reading (another target, a confirmation candle, fewer levels) is a new hypothesis.
+
+
+## H-023: ICT 2022 model at the New York open — overnight-range sweep, structure shift, fair-value-gap entry
+Registered 2026-10-24, before any H-023 code was run on market data. Code: `research/h023.py`. US100 1-minute bars, New York time.
+
+**Source.** The ICT 2022 mentorship model as written up by two teaching sites Tino shared (2026-10-24: a 10-step guide and a
+TradingFinder article with Nasdaq examples). Their New York scenario: mark the range from NY midnight to the open; the open sweeps one
+side; a market structure shift (MSS) with displacement follows on 5/3/1-minute bars; enter when price returns to the fair value gap
+(FVG) left by the shift; stop beyond the sweep; target the other side of the range; "at least 1:3". The bias step is left out of the
+verdict (the guides give no mechanical rule); a fixed bias rule is reported only. Failing rejects **this rule set**, not every reading of ICT.
+
+**Exact rules**
+- **Range:** high and low of 1-minute bars 00:00–09:29. Skip days missing any bar 09:20–09:35 or with fewer than 400 range bars.
+- **Sweep (09:30–10:59 bars):** the first bar whose high goes above the range high → short setup; low below the range low → long.
+  Both in one bar → no trade. Only the first sweep of the day counts.
+- **Sweep extreme:** the highest high (short) / lowest low (long) from the sweep bar onward, updated until the MSS.
+- **MSS on 5-minute bars** (clock-aligned): the most recent 5-minute swing low (a low below the bars either side, N = 1) whose right
+  neighbour closes at or before the 5-minute bar holding the sweep extreme; MSS = a 5-minute bar closing below it (mirrored for longs).
+  A new extreme resets the reference swing. The MSS bar must close by 11:00.
+- **Displacement / FVG:** a bearish 5-minute three-candle gap ≥ 5 points (H-011's size) whose first candle is at or after the extreme bar
+  and whose third candle is at or before the MSS bar; if several, the latest.
+- **Entry:** limit at the gap's near edge (bottom edge for shorts), live from the MSS bar's close to the 10:59 bar. Filled only when a
+  1-minute bar trades 0.25 through it. Cancelled if, before the fill, price reaches the target or the stop.
+- **Stop:** 0.25 beyond the sweep extreme; at least 5 points. **Target:** the opposite end of the range. **Skip** if that is under 2R.
+- **Exit:** stop, target, or the 11:59 bar's close (NY lunch). Stop and target in one bar → stop. A fill bar that also reaches the stop → stop.
+- One trade a day, weekdays only.
+- **Costs:** futures 0.5625 points per round trip; stress: stops 0.25 worse, costs doubled; also reported: FP Markets CFD cost 1.45 points.
+
+**Development** 2025-07-01→2026-03-31, run once, no changes after (bug fixes recorded here). **Final, once:** 2023-01-01→2025-06-30,
+only if development futures expectancy is above zero (both periods used by other rules: near-clean).
+**Pass (final, all):** ≥ 100 trades; futures PF ≥ 1.2 and expectancy ≥ +0.10R; mean gross R above the 95th percentile of a
+random-direction null (same entry bars, stop distance, target in R, exit time; coin-flip side); stress expectancy > 0.
+**Reported, not part of the verdict:** fixed 2R and 3R targets instead of the range end; a bias filter (trade only in the direction of
+the previous day's close relative to that day's 09:30–16:00 midpoint); longs vs shorts; setups skipped (no MSS, no gap, no fill, under 2R); each year.
+**Budget:** this one rule set (23rd registered hypothesis). A pass earns a forward demo with a stop on every trade, not money.
+### Results
+### Decision
+
+
+## H-024: Do ICT "macro" windows move more than the rest of the hour? (descriptive, no trading rule)
+Registered 2026-10-24, before any H-024 code was run on market data. Code: `research/h024.py`. US100 1-minute bars, New York time.
+
+**Claim tested.** ICT (2024 mentorship, as quoted in a guide Tino shared) says a macro runs in the last 10 minutes of each hour and the
+first 10 of the next, when price seeks liquidity or fills a gap. If true, those 20 minutes should move more, and take out nearby highs
+and lows more often, than the other 40 minutes of the same hour.
+
+**Method**
+- Blocks of one hour from HH:50 to the next HH:50, for HH = 02..14 (13 blocks, 02:50–15:50). In each: **macro** HH:50–HH+1:10,
+  **control 1** HH+1:10–HH+1:30, **control 2** HH+1:30–HH+1:50. Block 08:50: control 2 contains the 09:30 open, so only control 1 is used.
+- Per window and day: **range** = highest high − lowest low; **sweep** = 1 if the window goes beyond the high or the low of the 60
+  minutes before it starts. Days missing more than 2 bars in a block are skipped for that block.
+- Per block: mean of log(macro range / control range) across days (controls averaged), with a 95% day-bootstrap interval;
+  sweep rate of macro minus control, with a 95% interval.
+- Also reported: ICT's named NY windows on the same footing — 13:10–13:40 vs 13:40–14:10 and 15:15–15:45 vs 14:45–15:15.
+
+**Data:** 2025-07-01→2026-03-31 (the development period above; no trading rule is fitted, so the final period is not spent).
+**Supported if** in at least 9 of the 13 blocks the macro range is ≥ 10% larger (log ratio ≥ 0.095) with the interval above zero
+**and** the macro sweep rate is higher with the interval above zero. **Not supported** otherwise.
+**Known confound, stated now:** US data at 10:00 (and other on-the-hour releases) lands inside macro windows; no news calendar is used,
+so a "supported" result could be scheduled news rather than an algorithm. The 09:50 block is reported with that warning.
+### Results
+### Decision
