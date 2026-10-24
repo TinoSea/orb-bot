@@ -25,8 +25,8 @@ RANGE_MIN_BARS = 400
 
 class Day:
     """One day's 1-minute bars 00:00-11:59 on a minute grid (NaN where a bar is missing) and 5-minute bars."""
-    def __init__(self, g):
-        mins = ((g.index - g.index[0].normalize()).total_seconds() // 60).astype(int).to_numpy()
+    def __init__(self, g, day):
+        mins = ((g.index - day).total_seconds() // 60).astype(int).to_numpy()
         keep = mins <= FLAT
         mins = mins[keep]
         self.have = np.zeros(FLAT + 1, bool); self.have[mins] = True
@@ -35,6 +35,7 @@ class Day:
             arr[mins] = g[col].to_numpy(float)[keep]
         n5 = (FLAT + 1) // 5
         H = self.h.reshape(n5, 5); L = self.l.reshape(n5, 5); C = self.c.reshape(n5, 5)
+        import warnings; warnings.filterwarnings('ignore', 'All-NaN')
         with np.errstate(all='ignore'):
             self.h5, self.l5 = np.nanmax(H, 1), np.nanmin(L, 1)
         self.c5 = np.array([r[~np.isnan(r)][-1] if (~np.isnan(r)).any() else np.nan for r in C])
@@ -152,7 +153,7 @@ def run(m1, a, b):
     for day in keys:
         g = G[day]
         if pd.Timestamp(a) <= day <= pd.Timestamp(b):
-            tr, r = run_day(Day(g.loc[:day + pd.Timedelta(minutes=FLAT)]), prev)
+            tr, r = run_day(Day(g.loc[:day + pd.Timedelta(minutes=FLAT)], day), prev)
             why[r] += 1
             if r != 'data': used += 1
             if tr:
@@ -197,7 +198,7 @@ if __name__ == '__main__':
     if mode == 'day':
         day = pd.Timestamp(sys.argv[3])
         g = m1.loc[day:day + pd.Timedelta(minutes=FLAT)]
-        tr, r = run_day(Day(g), None, trace=True)
+        tr, r = run_day(Day(g, day), None, trace=True)
         print('result:', r); sys.exit()
     os.makedirs(OUT, exist_ok=True)
     f = f'{OUT}/{mode}.json'

@@ -1,0 +1,161 @@
+{
+ "trades": 9,
+ "win_rate": 0.333,
+ "gross_R": -0.202,
+ "net_R": -0.211,
+ "net_PF": 0.604,
+ "net_R_ci95": [
+  -0.779,
+  0.414
+ ],
+ "median_stop": 73.5,
+ "days_with_data": 193,
+ "period": [
+  "2025-07-01",
+  "2026-03-31"
+ ],
+ "setups": {
+  "no_mss": 81,
+  "no_sweep": 13,
+  "no_gap": 73,
+  "under_2R": 13,
+  "trade": 9,
+  "no_fill": 4,
+  "data": 3
+ },
+ "exits": {
+  "time": 5,
+  "stop": 4
+ },
+ "median_target_R": 2.7,
+ "stress": {
+  "trades": 9,
+  "win_rate": 0.333,
+  "gross_R": -0.204,
+  "net_R": -0.222,
+  "net_PF": 0.589,
+  "net_R_ci95": [
+   -0.791,
+   0.403
+  ],
+  "median_stop": 73.5
+ },
+ "null_mean": -0.009,
+ "null_p95": 0.577,
+ "percentile_vs_null": 0.303,
+ "verdict": "FAIL (>=100 False, PF False, exp False, null False, stress False)",
+ "cfd_cost": {
+  "trades": 9,
+  "win_rate": 0.333,
+  "gross_R": -0.202,
+  "net_R": -0.225,
+  "net_PF": 0.584,
+  "net_R_ci95": [
+   -0.794,
+   0.398
+  ],
+  "median_stop": 73.5
+ },
+ "fixed_2R": {
+  "trades": 9,
+  "win_rate": 0.333,
+  "gross_R": -0.138,
+  "net_R": -0.147,
+  "net_PF": 0.724,
+  "net_R_ci95": [
+   -0.779,
+   0.569
+  ],
+  "median_stop": 73.5
+ },
+ "fixed_3R": {
+  "trades": 9,
+  "win_rate": 0.333,
+  "gross_R": -0.202,
+  "net_R": -0.211,
+  "net_PF": 0.604,
+  "net_R_ci95": [
+   -0.779,
+   0.414
+  ],
+  "median_stop": 73.5
+ },
+ "bias_aligned": {
+  "trades": 5,
+  "win_rate": 0.0,
+  "gross_R": -0.749,
+  "net_R": -0.757,
+  "net_PF": 0.0,
+  "net_R_ci95": [
+   -1.011,
+   -0.425
+  ],
+  "median_stop": 96.75
+ },
+ "bias_against": {
+  "trades": 4,
+  "win_rate": 0.75,
+  "gross_R": 0.481,
+  "net_R": 0.471,
+  "net_PF": 2.87,
+  "net_R_ci95": [
+   -0.436,
+   1.347
+  ],
+  "median_stop": 69.75
+ },
+ "by": {
+  "side": {
+   "short": {
+    "trades": 6,
+    "win_rate": 0.333,
+    "gross_R": -0.417,
+    "net_R": -0.427,
+    "net_PF": 0.366,
+    "net_R_ci95": [
+     -1.01,
+     0.336
+    ],
+    "median_stop": 60.81
+   },
+   "long": {
+    "trades": 3,
+    "win_rate": 0.333,
+    "gross_R": 0.226,
+    "net_R": 0.22,
+    "net_PF": 1.874,
+    "net_R_ci95": [
+     -0.577,
+     1.416
+    ],
+    "median_stop": 96.75
+   }
+  },
+  "year": {
+   "2025": {
+    "trades": 4,
+    "win_rate": 0.0,
+    "gross_R": -0.893,
+    "net_R": -0.902,
+    "net_PF": 0.0,
+    "net_R_ci95": [
+     -1.012,
+     -0.685
+    ],
+    "median_stop": 60.81
+   },
+   "2026": {
+    "trades": 5,
+    "win_rate": 0.6,
+    "gross_R": 0.35,
+    "net_R": 0.342,
+    "net_PF": 2.444,
+    "net_R_ci95": [
+     -0.434,
+     1.117
+    ],
+    "median_stop": 78.5
+   }
+  }
+ }
+}

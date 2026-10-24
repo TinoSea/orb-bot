@@ -1,0 +1,314 @@
+{
+ "period": [
+  "2025-07-01",
+  "2026-03-31"
+ ],
+ "days": 196,
+ "blocks": {
+  "02:50-03:10": {
+   "days": 193,
+   "macro_range_pts": 34.5,
+   "control_range_pts": 35.2,
+   "log_ratio": -0.044,
+   "log_ratio_ci95": [
+    -0.104,
+    0.016
+   ],
+   "pct_larger": -4.3,
+   "macro_sweep_rate": 0.71,
+   "control_sweep_rate": 0.681,
+   "sweep_diff": 0.028,
+   "sweep_diff_ci95": [
+    -0.054,
+    0.111
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "03:50-04:10": {
+   "days": 193,
+   "macro_range_pts": 36.6,
+   "control_range_pts": 33.5,
+   "log_ratio": 0.084,
+   "log_ratio_ci95": [
+    0.023,
+    0.144
+   ],
+   "pct_larger": 8.7,
+   "macro_sweep_rate": 0.627,
+   "control_sweep_rate": 0.635,
+   "sweep_diff": -0.008,
+   "sweep_diff_ci95": [
+    -0.091,
+    0.075
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "04:50-05:10": {
+   "days": 193,
+   "macro_range_pts": 30.8,
+   "control_range_pts": 28.4,
+   "log_ratio": 0.059,
+   "log_ratio_ci95": [
+    -0.005,
+    0.122
+   ],
+   "pct_larger": 6.1,
+   "macro_sweep_rate": 0.518,
+   "control_sweep_rate": 0.51,
+   "sweep_diff": 0.008,
+   "sweep_diff_ci95": [
+    -0.078,
+    0.096
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "05:50-06:10": {
+   "days": 193,
+   "macro_range_pts": 28.9,
+   "control_range_pts": 27.9,
+   "log_ratio": -0.013,
+   "log_ratio_ci95": [
+    -0.073,
+    0.05
+   ],
+   "pct_larger": -1.3,
+   "macro_sweep_rate": 0.523,
+   "control_sweep_rate": 0.596,
+   "sweep_diff": -0.073,
+   "sweep_diff_ci95": [
+    -0.161,
+    0.021
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "06:50-07:10": {
+   "days": 193,
+   "macro_range_pts": 38.5,
+   "control_range_pts": 33.7,
+   "log_ratio": 0.041,
+   "log_ratio_ci95": [
+    -0.024,
+    0.105
+   ],
+   "pct_larger": 4.2,
+   "macro_sweep_rate": 0.746,
+   "control_sweep_rate": 0.689,
+   "sweep_diff": 0.057,
+   "sweep_diff_ci95": [
+    -0.028,
+    0.145
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "07:50-08:10": {
+   "days": 192,
+   "macro_range_pts": 35.1,
+   "control_range_pts": 43.2,
+   "log_ratio": -0.246,
+   "log_ratio_ci95": [
+    -0.317,
+    -0.176
+   ],
+   "pct_larger": -21.8,
+   "macro_sweep_rate": 0.609,
+   "control_sweep_rate": 0.682,
+   "sweep_diff": -0.073,
+   "sweep_diff_ci95": [
+    -0.159,
+    0.008
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "08:50-09:10": {
+   "days": 192,
+   "macro_range_pts": 40.8,
+   "control_range_pts": 39.5,
+   "log_ratio": -0.015,
+   "log_ratio_ci95": [
+    -0.081,
+    0.051
+   ],
+   "pct_larger": -1.5,
+   "macro_sweep_rate": 0.599,
+   "control_sweep_rate": 0.547,
+   "sweep_diff": 0.052,
+   "sweep_diff_ci95": [
+    -0.036,
+    0.146
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "09:50-10:10": {
+   "days": 194,
+   "macro_range_pts": 99.9,
+   "control_range_pts": 81.6,
+   "log_ratio": 0.183,
+   "log_ratio_ci95": [
+    0.127,
+    0.239
+   ],
+   "pct_larger": 20.1,
+   "macro_sweep_rate": 0.804,
+   "control_sweep_rate": 0.541,
+   "sweep_diff": 0.263,
+   "sweep_diff_ci95": [
+    0.183,
+    0.34
+   ],
+   "range_supports": true,
+   "sweep_supports": true
+  },
+  "10:50-11:10": {
+   "days": 194,
+   "macro_range_pts": 73.1,
+   "control_range_pts": 65.7,
+   "log_ratio": 0.083,
+   "log_ratio_ci95": [
+    0.024,
+    0.143
+   ],
+   "pct_larger": 8.7,
+   "macro_sweep_rate": 0.598,
+   "control_sweep_rate": 0.559,
+   "sweep_diff": 0.039,
+   "sweep_diff_ci95": [
+    -0.044,
+    0.124
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "11:50-12:10": {
+   "days": 193,
+   "macro_range_pts": 57.9,
+   "control_range_pts": 55.0,
+   "log_ratio": 0.055,
+   "log_ratio_ci95": [
+    -0.001,
+    0.108
+   ],
+   "pct_larger": 5.6,
+   "macro_sweep_rate": 0.58,
+   "control_sweep_rate": 0.565,
+   "sweep_diff": 0.016,
+   "sweep_diff_ci95": [
+    -0.067,
+    0.098
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "12:50-13:10": {
+   "days": 186,
+   "macro_range_pts": 53.5,
+   "control_range_pts": 50.8,
+   "log_ratio": 0.03,
+   "log_ratio_ci95": [
+    -0.025,
+    0.084
+   ],
+   "pct_larger": 3.1,
+   "macro_sweep_rate": 0.613,
+   "control_sweep_rate": 0.591,
+   "sweep_diff": 0.022,
+   "sweep_diff_ci95": [
+    -0.07,
+    0.11
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "13:50-14:10": {
+   "days": 186,
+   "macro_range_pts": 49.2,
+   "control_range_pts": 46.8,
+   "log_ratio": 0.056,
+   "log_ratio_ci95": [
+    -0.005,
+    0.114
+   ],
+   "pct_larger": 5.7,
+   "macro_sweep_rate": 0.597,
+   "control_sweep_rate": 0.581,
+   "sweep_diff": 0.016,
+   "sweep_diff_ci95": [
+    -0.07,
+    0.099
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "14:50-15:10": {
+   "days": 186,
+   "macro_range_pts": 47.4,
+   "control_range_pts": 46.5,
+   "log_ratio": -0.024,
+   "log_ratio_ci95": [
+    -0.087,
+    0.038
+   ],
+   "pct_larger": -2.3,
+   "macro_sweep_rate": 0.586,
+   "control_sweep_rate": 0.581,
+   "sweep_diff": 0.005,
+   "sweep_diff_ci95": [
+    -0.081,
+    0.094
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  }
+ },
+ "blocks_supporting": 1,
+ "verdict": "NOT SUPPORTED",
+ "named": {
+  "PM 13:10-13:40 vs 13:40-14:10": {
+   "days": 186,
+   "macro_range_pts": 62.1,
+   "control_range_pts": 60.0,
+   "log_ratio": 0.029,
+   "log_ratio_ci95": [
+    -0.035,
+    0.094
+   ],
+   "pct_larger": 3.0,
+   "macro_sweep_rate": 0.699,
+   "control_sweep_rate": 0.677,
+   "sweep_diff": 0.022,
+   "sweep_diff_ci95": [
+    -0.075,
+    0.118
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  },
+  "last hour 15:15-15:45 vs 14:45-15:15": {
+   "days": 186,
+   "macro_range_pts": 57.7,
+   "control_range_pts": 58.0,
+   "log_ratio": -0.005,
+   "log_ratio_ci95": [
+    -0.073,
+    0.064
+   ],
+   "pct_larger": -0.5,
+   "macro_sweep_rate": 0.704,
+   "control_sweep_rate": 0.677,
+   "sweep_diff": 0.027,
+   "sweep_diff_ci95": [
+    -0.07,
+    0.124
+   ],
+   "range_supports": false,
+   "sweep_supports": false
+  }
+ },
+ "note": "09:50-10:10 holds 10:00 US data releases; no news calendar used."
+}

@@ -29,8 +29,8 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
 | **H-022** | **H-017 rules on MNQ futures, signals 08:00-14:00 NY** | **registered 2026-10-22, not started** | window never tested; forward on Sim / demo |
-| H-023 | ICT 2022 NY model: overnight-range sweep → 5-min MSS → FVG entry, target range end | registered 2026-10-24 | not run yet |
-| H-024 | ICT macro windows (HH:50–HH:10) vs rest of the hour (descriptive) | registered 2026-10-24 | not run yet |
+| H-023 | ICT 2022 NY model: overnight-range sweep → 5-min MSS → FVG entry, target range end | failed | only 9 trades in 9 months; price kept going after the sweep on 42% of days |
+| H-024 | ICT macro windows (HH:50–HH:10) vs rest of the hour (descriptive) | not supported | 1 of 13 windows moves more: 09:50–10:10, the 10:00 news slot |
 
 ---
 
@@ -1368,8 +1368,17 @@ random-direction null (same entry bars, stop distance, target in R, exit time; c
 **Reported, not part of the verdict:** fixed 2R and 3R targets instead of the range end; a bias filter (trade only in the direction of
 the previous day's close relative to that day's 09:30–16:00 midpoint); longs vs shorts; setups skipped (no MSS, no gap, no fill, under 2R); each year.
 **Budget:** this one rule set (23rd registered hypothesis). A pass earns a forward demo with a stop on every trade, not money.
-### Results
-### Decision
+### Results (development, run once 2026-10-24)
+Data: FP Markets US100 M1 export (2025-06-30 → 2026-10-16, attached by Tino 2026-10-24). One bug fix before any result was seen:
+the first run crashed on a day with no bars before noon (the day's start was read from its first bar); the day is now passed in. No rule changed.
+**193 days with data → only 9 trades.** Where the sequence stopped: no sweep 13; sweep but **no structure shift by 11:00 on 81 days**
+(price kept going past the range); shift but no 5-point gap 73; target under 2R 13; no fill 4.
+The 9 trades: 3 wins, futures −0.21R (PF 0.60, 95% −0.78 to +0.41), median stop 73.5 points; exits 4 stops, 5 at 12:00, no targets
+reached. Random-direction null 30th percentile. Fixed 2R −0.15R, fixed 3R −0.21R. Bias filter: with bias 5 trades 0 wins; against 4 trades 3 wins.
+### Decision (2026-10-24): FAIL at development (9 trades, needs ≥ 100); the 2023-2025 final run is not spent.
+Too few trades to judge the edge either way. What the run does show: after the open takes out the overnight range, price **continued**
+rather than shifting structure on 42% of days, and only 5% of days produced the full sweep → shift → gap → fill sequence. A looser
+version (1-minute shift, smaller gaps, later cut-off) is a new hypothesis, registered first.
 
 
 ## H-024: Do ICT "macro" windows move more than the rest of the hour? (descriptive, no trading rule)
@@ -1393,5 +1402,12 @@ and lows more often, than the other 40 minutes of the same hour.
 **and** the macro sweep rate is higher with the interval above zero. **Not supported** otherwise.
 **Known confound, stated now:** US data at 10:00 (and other on-the-hour releases) lands inside macro windows; no news calendar is used,
 so a "supported" result could be scheduled news rather than an algorithm. The 09:50 block is reported with that warning.
-### Results
-### Decision
+### Results (run once 2026-10-24)
+196 weekdays, 2025-07-01 → 2026-03-31. **1 of 13 blocks** meets both conditions: **09:50–10:10**, range 99.9 vs 81.6 points (+20%,
+95% +14% to +27%), sweep rate 80% vs 54%. Every other block: macro range between −22% and +9% of the controls, sweep rate no different.
+07:50–08:10 is **22% smaller** than its control (08:10–08:30), which holds the 08:30 US data releases. Named PM windows: 13:10–13:40 +3%
+(interval spans zero), 15:15–15:45 −0.5%.
+### Decision (2026-10-24): NOT SUPPORTED.
+Outside 09:50–10:10 the "macro" minutes move like any other 20 minutes of the hour. The one window that stands out holds the 10:00
+data releases, and the 07:50 block shows the reverse pattern where the news sits in the control instead. Both point to scheduled
+news, not a time-based algorithm. Practical reading: 09:50–10:10 is a high-volatility slot to plan around (as her 09:57 news stop does), not an edge.
