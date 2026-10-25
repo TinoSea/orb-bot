@@ -167,6 +167,7 @@ class MarketData:
         self.events: Dict[int, threading.Event] = {}
         self.charts: Dict[int, List[dict]] = {}
         self.chart_done: Dict[int, threading.Event] = {}
+        self.chart_ended: set = set()            # end-of-history markers that arrived before anyone waited
         self.ready = threading.Event()
         self.lock = threading.Lock()
         self.symbol: Optional[str] = None
@@ -252,7 +253,9 @@ class MarketData:
                 for c in m.get("d", {}).get("charts", []):
                     cid = c.get("id")
                     if c.get("eoh"):
-                        ev = self.chart_done.get(cid)
+                        with self.lock:
+                            self.chart_ended.add(cid)
+                            ev = self.chart_done.get(cid)
                         if ev:
                             ev.set()
                         continue
@@ -284,16 +287,24 @@ class MarketData:
         })
         hid = d.get("historicalId") or d.get("realtimeId")
         rid = d.get("realtimeId")
-        ev = self.chart_done.setdefault(hid, threading.Event())
+        with self.lock:
+            ev = self.chart_done.setdefault(hid, threading.Event())
+            if hid in self.chart_ended:          # the marker came before this line ran
+                ev.set()
         if not ev.wait(timeout):
             log.warning("getChart %sm: no end-of-history marker in %s s; using what arrived", minutes, timeout)
         bars = list(self.charts.pop(hid, []))
         if rid is not None and rid != hid:
             bars += self.charts.pop(rid, [])
-        try:
-            self._send("md/cancelChart", {"subscriptionId": hid})
-        except Exception:  # noqa: BLE001
-            pass
+        for sid in {hid, rid} - {None}:          # stop both the history and the live part of the chart
+            try:
+                self._send("md/cancelChart", {"subscriptionId": sid})
+            except Exception:  # noqa: BLE001
+                pass
+        with self.lock:
+            self.chart_done.pop(hid, None)
+            self.chart_ended.discard(hid)
+        self.charts.pop(rid, None)
         uniq = {b["timestamp"]: b for b in bars}
         return [uniq[k] for k in sorted(uniq)]
 

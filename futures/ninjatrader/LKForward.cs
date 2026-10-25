@@ -1,6 +1,8 @@
 // LKForward.cs - NinjaTrader 8 strategy. La'Kera's zone method as a fixed rule, on futures (MNQ / NQ).
 // Port of mt5/LK_Forward.mq5 v1.00 (H-017) with the same zone, candle, trigger and bracket rules, plus:
-//   - signal window and flat time are inputs (defaults 08:00-14:00 and 14:30 New York);
+//   - signal windows and flat time are inputs (v1.10 defaults: Asia 18:00-03:00, London 03:00-08:00,
+//     New York 08:00-14:00, flat 14:30, all New York time);
+//   - days are CME trading days: 18:00 New York starts the next date's session (Sunday 18:00 = Monday);
 //   - prices are the futures LAST trade (MT5 used CFD bid candles and a mid trigger);
 //   - size = fixed dollar risk, capped by a contract limit and by a prop-firm guard that keeps every stop-out
 //     above the Maximum Loss Limit floor (MT5: 1% of balance).
@@ -37,12 +39,18 @@ namespace NinjaTrader.NinjaScript.Strategies
             public bool Used;
         }
 
-        private const string Version = "1.00-futures";
+        private const string Version = "1.10-futures";
+        private const int SessionOpen = 18 * 60;           // CME / FundedNext reopen, New York
+
+        private class Win { public string Name; public int Start, End; }  // session minutes, End exclusive
+        private List<Win> wins = new List<Win>();
+        private string armSess = "", posSess = "";
+        private int tradesAtEntry;
         private const string Sig = "LK";
 
         private readonly List<Zone> zones = new List<Zone>();
         private TimeZoneInfo nyTz;
-        private DateTime day = DateTime.MinValue;          // current New York date
+        private DateTime day = DateTime.MinValue;          // current trading day (CME session date)
         private int trades, losses;
         private long c15 = -1;                             // current 15-second candle index
         private double o, h, l, c;                         // current 15-second candle (last trade)
@@ -81,7 +89,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 TraceOrders = false;
 
                 MinGap = 5.0; Lookback = 5; StopPts = 12.5; TargetPts = 16.25; TriggerOff = 0.25; ArmSec = 45;
-                SignalFrom = "08:00"; SignalTo = "14:00"; CapMin = 15; FlatAt = "14:30";
+                SignalWindows = "Asia=18:00-03:00,London=03:00-08:00,NY=08:00-14:00"; CapMin = 15; FlatAt = "14:30";
                 MaxTrades = 3; MaxLosses = 2; NoFriday = true;
                 RiskDollars = 100; MaxContracts = 10; CommissionRoundTrip = 1.0;
                 StartBalance = 25000; MaxLossLimit = 1000; PayoutTaken = false; FloorOverride = 0; Buffer = 50;
@@ -97,11 +105,16 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 try { nyTz = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"); }
                 catch (TimeZoneNotFoundException) { nyTz = TimeZoneInfo.FindSystemTimeZoneById("America/New_York"); }
-                if (HM(FlatAt) <= HM(SignalTo))
-                    throw new ArgumentException("FlatAt must be later than SignalTo");
+                wins = ParseWindows(SignalWindows);
+                int lastEnd = 0;
+                foreach (Win w in wins) lastEnd = Math.Max(lastEnd, w.End);
+                if (SessMin(HM(FlatAt)) < lastEnd)
+                    throw new ArgumentException("FlatAt must be at or after the end of the last signal window");
+                if (SessMin(HM(FlatAt)) >= SessMin(HM("16:10")))
+                    throw new ArgumentException("FlatAt must be before 16:10 New York (FundedNext's 3:10 PM Chicago close)");
                 string acct = Account != null ? Account.Name : "none";
                 statePath = Path.Combine(NinjaTrader.Core.Globals.UserDataDir, "LKForward_" + Safe(acct) + "_state.txt");
-                journalPath = Path.Combine(NinjaTrader.Core.Globals.UserDataDir, "LK_futures_journal.csv");
+                journalPath = Path.Combine(NinjaTrader.Core.Globals.UserDataDir, "LK_futures_journal_v110.csv");
                 noTrade = new HashSet<string>((NoTradeDates ?? "").Split(new[] { ',', ' ' },
                     StringSplitOptions.RemoveEmptyEntries));
                 LoadState();
@@ -116,8 +129,8 @@ namespace NinjaTrader.NinjaScript.Strategies
                     Log("LKForward: account " + acct + " is not a Sim account and AllowNonSimAccount is off. Not trading.",
                         LogLevel.Alert);
                 }
-                Print(string.Format("LKForward {0} on {1}, account {2}, window {3}-{4} NY, flat {5}{6}", Version,
-                    Instrument.FullName, acct, SignalFrom, SignalTo, FlatAt, blocked ? " - BLOCKED" : ""));
+                Print(string.Format("LKForward {0} on {1}, account {2}, windows {3} (NY), flat {4}{5}", Version,
+                    Instrument.FullName, acct, SignalWindows, FlatAt, blocked ? " - BLOCKED" : ""));
             }
         }
 
@@ -142,12 +155,55 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         private DateTime ToNy(DateTime utc) { return TimeZoneInfo.ConvertTimeFromUtc(utc, nyTz); }
 
-        private DateTime NyMidnightUtc(DateTime nyDate)
+        private static int Minute(DateTime ny) { return ny.Hour * 60 + ny.Minute; }
+
+        // minutes since the 18:00 New York session open (18:00 -> 0, 08:00 -> 840, 14:30 -> 1230)
+        private static int SessMin(int minuteNy) { return ((minuteNy - SessionOpen) % 1440 + 1440) % 1440; }
+
+        // CME trading day: from 18:00 New York it is already the next date's session
+        private static DateTime TradingDay(DateTime ny) { return Minute(ny) >= SessionOpen ? ny.Date.AddDays(1) : ny.Date; }
+
+        // 18:00 New York on the evening before trading day d, as UTC
+        private DateTime SessionOpenUtc(DateTime tradingDay)
         {
-            return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(nyDate.Date, DateTimeKind.Unspecified), nyTz);
+            return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(tradingDay.Date.AddDays(-1).AddHours(18),
+                DateTimeKind.Unspecified), nyTz);
         }
 
-        private static int Minute(DateTime ny) { return ny.Hour * 60 + ny.Minute; }
+        private bool InFlatPeriod(DateTime ny) { return SessMin(Minute(ny)) >= SessMin(HM(FlatAt)); }
+
+        private string SessionOf(int minuteNy)
+        {
+            int m = SessMin(minuteNy);
+            foreach (Win w in wins) if (m >= w.Start && m < w.End) return w.Name;
+            return null;
+        }
+
+        private static List<Win> ParseWindows(string spec)
+        {
+            var list = new List<Win>();
+            string[] parts = (spec ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string part = parts[i].Trim();
+                if (part.Length == 0) continue;
+                string name = "W" + (i + 1), rng = part;
+                int eq = part.IndexOf('=');
+                if (eq >= 0) { name = part.Substring(0, eq).Trim(); rng = part.Substring(eq + 1); }
+                string[] ab = rng.Split('-');
+                if (ab.Length != 2) throw new ArgumentException("signal window '" + part + "' must look like Name=HH:MM-HH:MM");
+                int s = SessMin(HM(ab[0].Trim())), e = SessMin(HM(ab[1].Trim()));
+                if (e == 0) e = 1440;
+                if (e <= s) throw new ArgumentException("signal window '" + part + "' crosses the 18:00 New York session open");
+                list.Add(new Win { Name = name, Start = s, End = e });
+            }
+            if (list.Count == 0) throw new ArgumentException("no signal windows");
+            list.Sort((x, y) => x.Start.CompareTo(y.Start));
+            for (int i = 1; i < list.Count; i++)
+                if (list[i].Start < list[i - 1].End)
+                    throw new ArgumentException("signal windows " + list[i - 1].Name + " and " + list[i].Name + " overlap");
+            return list;
+        }
 
         private static DateTime DaysBack(DateTime d, int n)
         {
@@ -164,8 +220,8 @@ namespace NinjaTrader.NinjaScript.Strategies
         private void BuildZones(DateTime nyToday, DateTime nowUtc)
         {
             zones.Clear();
-            DateTime sinceUtc = NyMidnightUtc(DaysBack(nyToday, Lookback));
-            DateTime todayUtc = NyMidnightUtc(nyToday);
+            DateTime sinceUtc = SessionOpenUtc(DaysBack(nyToday, Lookback));
+            DateTime todayUtc = SessionOpenUtc(nyToday);
             for (int k = 1; k <= 2; k++)
             {
                 Bars b = BarsArray[k];
@@ -193,7 +249,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     zones.Add(new Zone { Supply = sup, Lo = lo, Hi = hi, Tf = tf, FormedUtc = formed });
                 }
             }
-            Print(string.Format("LKForward {0:yyyy-MM-dd}: {1} earlier-day zones live (5m bars loaded: {2}, 15m: {3})",
+            Print(string.Format("LKForward trading day {0:yyyy-MM-dd}: {1} earlier-day zones live (5m bars loaded: {2}, 15m: {3})",
                 nyToday, zones.Count, BarsArray[1].Count, BarsArray[2].Count));
         }
 
@@ -224,9 +280,10 @@ namespace NinjaTrader.NinjaScript.Strategies
             DateTime ny = ToNy(nowUtc);
             double price = e.Price;
 
-            if (ny.Date != day)
+            DateTime td = TradingDay(ny);
+            if (td != day)
             {
-                day = ny.Date; trades = 0; losses = 0; armDir = 0; armZone = null; c15 = -1; k5 = -1; k15 = -1;
+                day = td; trades = 0; losses = 0; armDir = 0; armZone = null; c15 = -1; k5 = -1; k15 = -1;
                 BuildZones(day, nowUtc);
             }
 
@@ -236,24 +293,24 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 pendingUtc = DateTime.MinValue;
                 Journal(ny, "error", lastSide, price, 0, 0, null, 0, "", Account.Get(AccountItem.CashValue, Currency.UsDollar),
-                    "entry not filled within 10 s");
+                    "entry not filled within 10 s", posSess);
             }
             bool inPos = Position.MarketPosition != MarketPosition.Flat || pendingUtc != DateTime.MinValue;
             // time cap and flat time
             if (inPos)
             {
                 bool cap = entryUtc != DateTime.MinValue && (nowUtc - entryUtc).TotalSeconds >= CapMin * 60;
-                if ((cap || Minute(ny) >= HM(FlatAt)) && !exitSent)
+                if ((cap || InFlatPeriod(ny)) && !exitSent)
                 {
                     exitSent = true;                       // one exit order, not one per tick
                     if (Position.MarketPosition == MarketPosition.Long) ExitLong(cap ? "cap" : "flat", Sig);
                     else ExitShort(cap ? "cap" : "flat", Sig);
                 }
             }
-            else if (Minute(ny) >= HM(FlatAt) + 1 && eodDate != ny.ToString("yyyy-MM-dd"))
+            else if (InFlatPeriod(ny) && InFlatPeriod(ny.AddMinutes(-1)) && eodDate != day.ToString("yyyy-MM-dd"))
                 RecordEod(ny);
 
-            DayOfWeek w = ny.DayOfWeek;
+            DayOfWeek w = day.DayOfWeek;                   // trading day: Thursday 18:00 is already Friday
             if (w == DayOfWeek.Saturday || w == DayOfWeek.Sunday || (NoFriday && w == DayOfWeek.Friday)) return;
 
             double epoch = (nowUtc - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
@@ -273,14 +330,14 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             else { h = Math.Max(h, price); l = Math.Min(l, price); c = price; }
 
-            if (!inPos && trades < MaxTrades && losses < MaxLosses && !noTrade.Contains(ny.ToString("yyyy-MM-dd")))
+            if (!inPos && trades < MaxTrades && losses < MaxLosses && !noTrade.Contains(day.ToString("yyyy-MM-dd")))
                 TryFill(nowUtc, ny, price);
         }
 
         private void OnClosed15(DateTime closeUtc, bool inPos)
         {
-            int mm = Minute(ToNy(closeUtc));
-            if (mm < HM(SignalFrom) || mm >= HM(SignalTo)) return;
+            string sess = SessionOf(Minute(ToNy(closeUtc)));
+            if (sess == null) return;
             if (inPos || trades >= MaxTrades || losses >= MaxLosses) return;
             for (int d = -1; d <= 1; d += 2)
             {
@@ -292,7 +349,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 {
                     if (z.Used || z.Supply != (d < 0)) continue;
                     if (tip < z.Lo || tip > z.Hi) continue;
-                    armDir = d; armZone = z; armExpUtc = closeUtc.AddSeconds(ArmSec);
+                    armDir = d; armZone = z; armSess = sess; armExpUtc = closeUtc.AddSeconds(ArmSec);
                     armTrig = d < 0 ? l - TriggerOff : h + TriggerOff;
                     return;
                 }
@@ -315,19 +372,21 @@ namespace NinjaTrader.NinjaScript.Strategies
             double sl = price - d * StopPts, tp = price + d * TargetPts;
             if (qty <= 0)
             {
-                Journal(ny, "skipped", side, price, sl, tp, z, 0, "", cash, "size 0: risk, contract cap or MLL guard");
+                Journal(ny, "skipped", side, price, sl, tp, z, 0, "", cash, "size 0: risk, contract cap or MLL guard", armSess);
                 Print("LKForward: signal skipped, size 0 (cash " + cash.ToString("F2") + ", floor " + Floor().ToString("F2") + ")");
                 return;
             }
             int stopTicks = (int)Math.Round(StopPts / TickSize), tgtTicks = (int)Math.Round(TargetPts / TickSize);
             SetStopLoss(Sig, CalculationMode.Ticks, stopTicks, false);
             SetProfitTarget(Sig, CalculationMode.Ticks, tgtTicks);
+            tradesAtEntry = SystemPerformance.AllTrades.Count;
+            posSess = armSess;
             if (d < 0) EnterShort(qty, Sig); else EnterLong(qty, Sig);
             trades++;
             entryUtc = nowUtc;
             pendingUtc = nowUtc;
             lastSide = side;
-            Journal(ny, "entry", side, price, sl, tp, z, qty, "", cash, "");
+            Journal(ny, "entry", side, price, sl, tp, z, qty, "", cash, "", posSess);
         }
 
         protected override void OnPositionUpdate(Position position, double averagePrice, int quantity,
@@ -336,19 +395,22 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (State != State.Realtime) return;
             pendingUtc = DateTime.MinValue;                // filled (or closed): no longer pending
             if (marketPosition != MarketPosition.Flat) return;
+            // sum every trade record since this entry: a partly filled order makes one record per execution
             double pnl = 0, exitPx = 0;
-            if (SystemPerformance.AllTrades.Count > 0)
+            int n = SystemPerformance.AllTrades.Count;
+            for (int i = Math.Min(tradesAtEntry, n); i < n; i++)
             {
-                Trade t = SystemPerformance.AllTrades[SystemPerformance.AllTrades.Count - 1];
-                pnl = t.ProfitCurrency;
+                Trade t = SystemPerformance.AllTrades[i];
+                pnl += t.ProfitCurrency;
                 exitPx = t.Exit.Price;
             }
+            tradesAtEntry = n;
             if (pnl < 0) losses++;
             entryUtc = DateTime.MinValue;
             exitSent = false;
             DateTime ny = ToNy(DateTime.UtcNow);
             double cash = Account.Get(AccountItem.CashValue, Currency.UsDollar);
-            Journal(ny, "exit", lastSide, exitPx, 0, 0, null, 0, pnl.ToString("F2", CultureInfo.InvariantCulture), cash, "");
+            Journal(ny, "exit", lastSide, exitPx, 0, 0, null, 0, pnl.ToString("F2", CultureInfo.InvariantCulture), cash, "", posSess);
         }
 
         // ------------------------------------------------------------ size and the prop-firm guard
@@ -373,9 +435,9 @@ namespace NinjaTrader.NinjaScript.Strategies
         {
             double cash = Account.Get(AccountItem.CashValue, Currency.UsDollar);
             eodHigh = Math.Max(eodHigh, cash);
-            eodDate = ny.ToString("yyyy-MM-dd");
+            eodDate = day.ToString("yyyy-MM-dd");
             SaveState();
-            Journal(ny, "eod", "", 0, 0, 0, null, 0, "", cash, "floor " + Floor().ToString("F2", CultureInfo.InvariantCulture));
+            Journal(ny, "eod", "", 0, 0, 0, null, 0, "", cash, "floor " + Floor().ToString("F2", CultureInfo.InvariantCulture), "");
         }
 
         private void LoadState()
@@ -400,7 +462,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         private void Journal(DateTime ny, string ev, string side, double price, double sl, double tp, Zone z, int qty,
-            string profit, double cash, string note)
+            string profit, double cash, string note, string sess)
         {
             try
             {
@@ -408,10 +470,10 @@ namespace NinjaTrader.NinjaScript.Strategies
                 using (var w = new StreamWriter(journalPath, true))
                 {
                     if (!exists)
-                        w.WriteLine("time_ny,event,side,price,sl,tp,zone_tf,zone_lo,zone_hi,contracts,profit,balance,floor,note");
+                        w.WriteLine("time_ny,trading_day,session,event,side,price,sl,tp,zone_tf,zone_lo,zone_hi,contracts,profit,balance,floor,note");
                     var ci = CultureInfo.InvariantCulture;
                     w.WriteLine(string.Join(",", new[] {
-                        ny.ToString("yyyy-MM-dd HH:mm:ss", ci), ev, side,
+                        ny.ToString("yyyy-MM-dd HH:mm:ss", ci), TradingDay(ny).ToString("yyyy-MM-dd", ci), sess ?? "", ev, side,
                         price != 0 ? price.ToString(ci) : "", sl != 0 ? sl.ToString(ci) : "", tp != 0 ? tp.ToString(ci) : "",
                         z != null ? z.Tf : "", z != null ? z.Lo.ToString(ci) : "", z != null ? z.Hi.ToString(ci) : "",
                         qty != 0 ? qty.ToString(ci) : "", profit, cash.ToString("F2", ci), Floor().ToString("F2", ci),
@@ -447,12 +509,8 @@ namespace NinjaTrader.NinjaScript.Strategies
         public int ArmSec { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Signals from (NY, HH:MM)", Order = 7, GroupName = "1. Rule")]
-        public string SignalFrom { get; set; }
-
-        [NinjaScriptProperty]
-        [Display(Name = "Signals until (NY, HH:MM)", Order = 8, GroupName = "1. Rule")]
-        public string SignalTo { get; set; }
+        [Display(Name = "Signal windows (NY, Name=HH:MM-HH:MM, comma separated)", Order = 7, GroupName = "1. Rule")]
+        public string SignalWindows { get; set; }
 
         [NinjaScriptProperty, Range(1, 240)]
         [Display(Name = "Time cap (minutes)", Order = 9, GroupName = "1. Rule")]
@@ -463,15 +521,15 @@ namespace NinjaTrader.NinjaScript.Strategies
         public string FlatAt { get; set; }
 
         [NinjaScriptProperty, Range(1, 20)]
-        [Display(Name = "Max trades a day", Order = 11, GroupName = "1. Rule")]
+        [Display(Name = "Max trades a trading day", Order = 11, GroupName = "1. Rule")]
         public int MaxTrades { get; set; }
 
         [NinjaScriptProperty, Range(1, 20)]
-        [Display(Name = "Max losses a day", Order = 12, GroupName = "1. Rule")]
+        [Display(Name = "Max losses a trading day", Order = 12, GroupName = "1. Rule")]
         public int MaxLosses { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "No Fridays", Order = 13, GroupName = "1. Rule")]
+        [Display(Name = "No Fridays (from Thursday 18:00)", Order = 13, GroupName = "1. Rule")]
         public bool NoFriday { get; set; }
 
         [NinjaScriptProperty, Range(1, double.MaxValue)]
@@ -507,7 +565,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         public double Buffer { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "No-trade dates (yyyy-MM-dd, comma separated)", Order = 1, GroupName = "3. Safety")]
+        [Display(Name = "No-trade trading days (yyyy-MM-dd, comma separated)", Order = 1, GroupName = "3. Safety")]
         public string NoTradeDates { get; set; }
 
         [NinjaScriptProperty]

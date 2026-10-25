@@ -1,12 +1,16 @@
 """LK_Forward rules as a pure engine (no broker code), for futures (MNQ / NQ).
 
-Same rules as mt5/LK_Forward.mq5 v1.00, except the signal window and flat time, which are inputs
-(futures default: signals 08:00-14:00 New York, flat 14:30). Differences from the MT5 bot, by design:
+Same rules as mt5/LK_Forward.mq5 v1.00, except the signal windows and flat time, which are inputs
+(futures default since v1.10: Asia 18:00-03:00, London 03:00-08:00 and New York 08:00-14:00, flat 14:30, all New York
+time). Differences from the MT5 bot, by design:
   - prices are the futures LAST trade price (MT5 used CFD bid for candles and mid for the trigger);
   - size is a fixed dollar risk capped by a contract limit (MT5: 1% of balance), plus a prop-firm guard
     that never lets a stop-out reach the account's Maximum Loss Limit floor.
 
-Time is epoch seconds (UTC). New York days, Fridays and the window use America/New_York (DST-aware).
+Time is epoch seconds (UTC). Clock times are America/New_York (DST-aware).
+A TRADING DAY is the CME / FundedNext session: it opens at 18:00 New York and is named after the date it ends on, so
+Sunday 18:00 starts Monday's trading day and Thursday 18:00 starts Friday's. Daily limits, "no Fridays", the zone
+look-back ("earlier days" = earlier sessions) and no-trade dates all use the trading day.
 The engine never talks to a broker: the runner feeds it trade prices and tells it about fills and exits.
 """
 from __future__ import annotations
@@ -29,19 +33,62 @@ class Rules:
     target_pts: float = 16.25     # target distance, points (1.3R)
     trigger_off: float = 0.25     # stop-entry offset beyond the rejection candle
     arm_sec: int = 45             # trigger valid for this many seconds
-    sig_from: str = "08:00"       # signals from (New York), candle close time
-    sig_to: str = "14:00"         # signals until (New York), exclusive
+    windows: str = "Asia=18:00-03:00,London=03:00-08:00,NY=08:00-14:00"   # signal windows (candle close time)
     cap_min: int = 15             # close a trade after this many minutes
     flat: str = "14:30"           # close anything open at this New York time
-    max_trades: int = 3           # max trades a day
-    max_losses: int = 2           # stop for the day after this many losing trades
-    no_friday: bool = True        # her rule: no trading on Fridays
+    max_trades: int = 3           # max trades a trading day
+    max_losses: int = 2           # stop for the trading day after this many losing trades
+    no_friday: bool = True        # her rule: no trading on Fridays (the trading day from Thursday 18:00)
+
+    def __post_init__(self):
+        self.wins = parse_windows(self.windows)
 
     def check(self) -> None:
-        if hhmm(self.flat) <= hhmm(self.sig_to):
-            raise ValueError(f"flat time {self.flat} must be after the signal window end {self.sig_to}")
-        if hhmm(self.sig_from) >= hhmm(self.sig_to):
-            raise ValueError("sig_from must be before sig_to")
+        self.wins = parse_windows(self.windows)
+        f = sess_min_of(hhmm(self.flat))
+        last_end = max(e for _, _, e in self.wins)
+        if f < last_end:
+            raise ValueError(f"flat time {self.flat} must be at or after the last signal window's end")
+        if f >= sess_min_of(hhmm("16:10")):
+            raise ValueError(f"flat time {self.flat} must be before 16:10 New York (FundedNext's 3:10 PM Chicago close)")
+
+    def session_of(self, minute_ny: int) -> Optional[str]:
+        """Name of the signal window a New York clock minute falls in, or None."""
+        m = sess_min_of(minute_ny)
+        for name, s, e in self.wins:
+            if s <= m < e:
+                return name
+        return None
+
+
+SESSION_OPEN = 18 * 60            # CME Globex (and FundedNext) reopen: 18:00 New York
+
+
+def sess_min_of(minute_ny: int) -> int:
+    """Minutes since the 18:00 New York session open (18:00 -> 0, 08:00 -> 840, 14:30 -> 1230)."""
+    return (minute_ny - SESSION_OPEN) % 1440
+
+
+def parse_windows(spec: str) -> List[tuple]:
+    """'Asia=18:00-03:00,NY=08:00-14:00' -> [(name, start, end)] in session minutes; a window may cross midnight.
+    Windows must not overlap and must lie inside the session (they cannot cross 18:00)."""
+    out = []
+    for i, part in enumerate(x.strip() for x in spec.split(",") if x.strip()):
+        name, rng = part.split("=", 1) if "=" in part else (f"W{i + 1}", part)
+        a, b = (v.strip() for v in rng.split("-"))
+        s, e = sess_min_of(hhmm(a)), sess_min_of(hhmm(b))
+        if e == 0:
+            e = 1440                                  # a window ending exactly at 18:00
+        if e <= s:
+            raise ValueError(f"window {part!r} crosses the 18:00 New York session open")
+        out.append((name.strip(), s, e))
+    if not out:
+        raise ValueError("no signal windows")
+    out.sort(key=lambda w: w[1])
+    for (n1, _, e1), (n2, s2, _) in zip(out, out[1:]):
+        if s2 < e1:
+            raise ValueError(f"windows {n1} and {n2} overlap")
+    return out
 
 
 def hhmm(v: str) -> int:
@@ -56,6 +103,17 @@ def ny_date(ts: float) -> date:
 
 def ny_midnight(d: date) -> float:
     return datetime.combine(d, time(0, 0), NY).timestamp()
+
+
+def trading_day(ts: float) -> date:
+    """CME trading day: from 18:00 New York it is already the next date's session."""
+    t = datetime.fromtimestamp(ts, NY)
+    return t.date() + timedelta(days=1) if t.hour * 60 + t.minute >= SESSION_OPEN else t.date()
+
+
+def session_open(d: date) -> float:
+    """Epoch of 18:00 New York on the evening before trading day d (Monday's opens on Sunday)."""
+    return datetime.combine(d - timedelta(days=1), time(18, 0), NY).timestamp()
 
 
 def ny_minute(ts: float) -> int:
@@ -154,6 +212,7 @@ class Enter:
     price: float       # trade price that hit the trigger
     zone: Zone
     ts: float
+    session: str = ""  # signal window that armed it (Asia / London / NY)
 
 
 @dataclass
@@ -176,6 +235,7 @@ class Engine:
     arm_trig: float = 0.0
     arm_exp: float = 0.0
     arm_zone: Optional[Zone] = None
+    arm_sess: str = ""
     entry_time: Optional[float] = None
 
     def __post_init__(self):
@@ -192,13 +252,13 @@ class Engine:
         self.c15.reset()
         self.b5.reset()                    # no stale bar from an earlier day may kill a fresh zone
         self.b15.reset()
-        today = ny_midnight(d)
-        since = ny_midnight(days_back(d, self.rules.lookback))
+        today = session_open(d)
+        since = session_open(days_back(d, self.rules.lookback))
         self.zones = []
         for tf, sec in (("5m", 300), ("15m", 900)):
             bars = self.bars_provider(tf, since - 2 * sec)
             self.zones += find_zones(bars, tf, since, today, self.rules.min_gap)
-        self.log(f"{d}: {len(self.zones)} earlier-day zones live")
+        self.log(f"trading day {d}: {len(self.zones)} earlier-day zones live")
 
     # ---- zones broken by newly closed 5m / 15m bars
     def _kill(self, tf: str, close: float) -> None:
@@ -214,8 +274,8 @@ class Engine:
     # ---- 15-second candle closed
     def _on_closed15(self, c: Bar, in_position: bool) -> None:
         r = self.rules
-        mm = ny_minute(c.t_close)
-        if mm < hhmm(r.sig_from) or mm >= hhmm(r.sig_to):
+        sess = r.session_of(ny_minute(c.t_close))
+        if sess is None:
             return
         if in_position or self.trades >= r.max_trades or self.losses >= r.max_losses:
             return
@@ -230,7 +290,7 @@ class Engine:
                     continue
                 if tip < z.lo or tip > z.hi:
                     continue
-                self.arm_dir, self.arm_zone = d, z
+                self.arm_dir, self.arm_zone, self.arm_sess = d, z, sess
                 self.arm_exp = c.t_close + r.arm_sec
                 self.arm_trig = c.low - r.trigger_off if d < 0 else c.high + r.trigger_off
                 return
@@ -239,7 +299,7 @@ class Engine:
     def on_tick(self, ts: float, price: float, in_position: bool) -> list:
         r = self.rules
         actions: list = []
-        d = ny_date(ts)
+        d = trading_day(ts)
         if d != self.day:
             self._new_day(d)
         # manage the open trade (time cap and flat time)
@@ -268,14 +328,14 @@ class Engine:
             return None
         r = self.rules
         cap = self.entry_time is not None and ts - self.entry_time >= r.cap_min * 60
-        if cap or ny_minute(ts) >= hhmm(r.flat):
+        if cap or in_flat_period(ts, r):
             return Exit("cap" if cap else "flat", ts)
         return None
 
     def _try_fill(self, ts: float, price: float) -> Optional[Enter]:
         if self.arm_dir == 0:
             return None
-        if ts > self.arm_exp or self.arm_zone is None or self.arm_zone not in self.zones:
+        if ts > self.arm_exp or self.arm_zone is None or not any(z is self.arm_zone for z in self.zones):
             self.arm_dir, self.arm_zone = 0, None
             return None
         d = self.arm_dir
@@ -284,7 +344,7 @@ class Engine:
         z = self.arm_zone
         z.used = True                      # first try only, win or lose (even if the order is skipped)
         self.arm_dir, self.arm_zone = 0, None
-        return Enter(d, price, z, ts)
+        return Enter(d, price, z, ts, self.arm_sess)
 
     # ---- the runner reports what really happened
     def on_entry(self, ts: float) -> None:
@@ -295,6 +355,11 @@ class Engine:
         if pnl < 0:
             self.losses += 1
         self.entry_time = None
+
+
+def in_flat_period(ts: float, r: Rules) -> bool:
+    """True from the flat time until the 18:00 session open (no position may be held then)."""
+    return sess_min_of(ny_minute(ts)) >= sess_min_of(hhmm(r.flat))
 
 
 # ---------------------------------------------------------------- sizing and the prop-firm guard

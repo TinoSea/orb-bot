@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from lk_core import (NY, Bar, Engine, Enter, Exit, Guard, Rules, days_back, find_zones,  # noqa: E402
-                     ny_midnight, size)
+                     ny_midnight, parse_windows, session_open, size, trading_day)
 
 
 def ts(y, mo, d, h, mi, s=0):
@@ -141,22 +141,86 @@ def test_first_try_only():
 
 
 def test_window_boundaries():
-    # candle closing 07:59:45 is outside; 08:00:00 is inside; 14:00:00 is outside (window is [08:00, 14:00)
-    for start, armed in ((ts(2026, 10, 20, 7, 59, 30), False), (ts(2026, 10, 20, 7, 59, 45), True),
-                         (ts(2026, 10, 20, 13, 59, 30), True), (ts(2026, 10, 20, 13, 59, 45), False)):
+    # windows (NY): Asia 18:00-03:00, London 03:00-08:00, NY 08:00-14:00; nothing from 14:00 until 18:00
+    for start, armed in ((ts(2026, 10, 20, 13, 59, 30), True), (ts(2026, 10, 20, 13, 59, 45), False),
+                         (ts(2026, 10, 20, 16, 0, 0), False), (ts(2026, 10, 20, 17, 59, 30), False),
+                         (ts(2026, 10, 19, 18, 0, 0), True), (ts(2026, 10, 20, 2, 59, 45), True),
+                         (ts(2026, 10, 20, 7, 59, 45), True)):
         e = engine(supply_bars())
         feed(e, start - 30, [96])
         rejection_short(e, start)
-        assert (e.arm_dir == -1) == armed, start
+        assert (e.arm_dir == -1) == armed, datetime.fromtimestamp(start, NY)
+
+
+@pytest.mark.parametrize("hm,session", [((19, 0), "Asia"), ((23, 30), "Asia"), ((2, 0), "Asia"),
+                                        ((3, 0), "London"), ((7, 30), "London"), ((8, 0), "NY"), ((13, 0), "NY")])
+def test_each_session_trades_and_is_labelled(hm, session):
+    # Monday 10:00's zone is live for Tuesday's trading day, which opens Monday 18:00
+    day = 19 if hm[0] >= 18 else 20
+    e = engine(supply_bars())
+    t0 = ts(2026, 10, day, *hm)
+    feed(e, t0 - 30, [96])
+    acts, t = rejection_short(e, t0)
+    acts, _ = feed(e, t, [96.5])
+    enters = [a for _, a in acts if isinstance(a, Enter)]
+    assert len(enters) == 1 and enters[0].session == session
+
+
+def test_zones_formed_after_the_session_open_are_today():
+    # a gap formed Monday 19:00 belongs to Tuesday's session, so it is not an "earlier-day" zone on Tuesday
+    b = supply_bars()
+    shift = ts(2026, 10, 19, 19, 0) - MON_10
+    later = [bar(x.t_open + shift, 300, x.open, x.high, x.low, x.close) for x in b]
+    assert find_zones(later, "5m", session_open(days_back(TUE, 5)), session_open(TUE), 5.0) == []
+    assert len(find_zones(b, "5m", session_open(days_back(TUE, 5)), session_open(TUE), 5.0)) == 1
+
+
+def test_trading_day_and_session_open():
+    assert trading_day(ts(2026, 10, 25, 17, 59)) == date(2026, 10, 25)       # Sunday, market closed
+    assert trading_day(ts(2026, 10, 25, 18, 0)) == date(2026, 10, 26)        # Sunday 18:00 = Monday's session
+    assert trading_day(ts(2026, 10, 29, 19, 0)) == date(2026, 10, 30)        # Thursday evening = Friday
+    assert trading_day(ts(2026, 10, 30, 14, 0)) == date(2026, 10, 30)
+    assert session_open(date(2026, 10, 26)) == ts(2026, 10, 25, 18, 0)
+    # across the US clock change (1 Nov 2026): still 18:00 New York
+    assert session_open(date(2026, 11, 2)) == ts(2026, 11, 1, 18, 0)
+
+
+def test_windows_parse_and_reject_bad_input():
+    assert parse_windows("Asia=18:00-03:00,London=03:00-08:00,NY=08:00-14:00") == [
+        ("Asia", 0, 540), ("London", 540, 840), ("NY", 840, 1200)]
+    assert parse_windows("08:00-14:00") == [("W1", 840, 1200)]
+    for bad in ("NY=08:00-14:00,X=13:00-15:00", "A=17:00-19:00", ""):
+        with pytest.raises(ValueError):
+            parse_windows(bad)
 
 
 def test_old_window_still_available_as_input():
-    r = Rules(sig_from="09:30", sig_to="09:57", flat="11:45")
+    r = Rules(windows="09:30-09:57", flat="11:45")
     e = engine(supply_bars(), r)
     t0 = ts(2026, 10, 20, 9, 0, 0)
     feed(e, t0 - 30, [96])
     rejection_short(e, t0)
     assert e.arm_dir == 0
+    e = engine(supply_bars(), r)
+    t0 = ts(2026, 10, 20, 9, 40, 0)
+    feed(e, t0 - 30, [96])
+    rejection_short(e, t0)
+    assert e.arm_dir == -1
+
+
+def test_thursday_evening_is_friday_and_sunday_evening_is_monday():
+    thu_zone = [bar(x.t_open + 3 * 86400, 300, x.open, x.high, x.low, x.close) for x in supply_bars()]  # Thu 10:00
+    e = engine(thu_zone)
+    t0 = ts(2026, 10, 22, 19, 0)                                    # Thursday 19:00 -> Friday: no trading
+    feed(e, t0 - 30, [96])
+    rejection_short(e, t0)
+    assert e.arm_dir == 0
+    fri_zone = [bar(x.t_open - 3 * 86400, 300, x.open, x.high, x.low, x.close) for x in supply_bars()]  # Fri 16 Oct
+    e = engine(fri_zone)
+    t0 = ts(2026, 10, 18, 19, 0)                                    # Sunday 19:00 -> Monday 19 Oct: trades
+    feed(e, t0 - 30, [96])
+    rejection_short(e, t0)
+    assert e.arm_dir == -1
 
 
 def test_no_fridays():
@@ -212,8 +276,21 @@ def test_time_cap_and_flat():
     a = e.on_tick(t + 15 * 60, 96, True)
     assert len(a) == 1 and isinstance(a[0], Exit) and a[0].reason == "cap"
     e.entry_time = None
+    assert e.on_tick(ts(2026, 10, 20, 14, 29, 59), 96, True) == []
     a = e.on_tick(ts(2026, 10, 20, 14, 30, 0), 96, True)
     assert a and a[0].reason == "flat"
+
+
+def test_asia_position_is_not_flattened_by_the_flat_time():
+    # 20:00 is after 14:30 on the clock, but it is the new session: only the 15-minute cap may close it
+    e = engine(supply_bars())
+    t = ts(2026, 10, 19, 20, 0, 0)
+    e.on_tick(t, 96, False)
+    e.on_entry(t)
+    assert e.on_tick(t + 60, 96, True) == []
+    assert e.on_tick(t + 14 * 60, 96, True) == []
+    a = e.on_tick(t + 15 * 60, 96, True)
+    assert len(a) == 1 and a[0].reason == "cap"
 
 
 def test_daily_limits():
@@ -228,9 +305,26 @@ def test_daily_limits():
     assert e.arm_dir == 0                                # 2 losses -> done for the day
 
 
-def test_flat_must_follow_window():
+def test_flat_must_follow_window_and_precede_fundednext_close():
     with pytest.raises(ValueError):
-        Rules(sig_to="14:00", flat="11:45").check()
+        Rules(flat="11:45").check()                           # before the NY window ends
+    with pytest.raises(ValueError):
+        Rules(flat="16:30").check()                           # after FundedNext's 16:10 New York close
+    Rules(flat="15:00").check()
+
+
+def test_daily_limits_span_the_whole_trading_day():
+    # two losses in Asia stop the bot for London and New York of the same trading day
+    e = engine(supply_bars())
+    t = ts(2026, 10, 19, 20, 0)
+    e.on_tick(t, 96, False)
+    for _ in range(2):
+        e.on_entry(t)
+        e.on_exit(-30)
+    t0 = ts(2026, 10, 20, 9, 0)
+    feed(e, t0 - 30, [96])
+    rejection_short(e, t0)
+    assert e.arm_dir == 0
 
 
 # ---------------------------------------------------------------- sizing and guard
@@ -292,11 +386,13 @@ def test_random_walk_invariants():
                 in_pos = False
         t += rnd.choice([0.5, 1, 2, 5])
     assert entries, "expected some trades in a random week"
+    from lk_core import sess_min_of
     by_day = {}
     for a in entries:
-        d = datetime.fromtimestamp(a.ts, NY).date()
+        d = trading_day(a.ts)
         by_day[d] = by_day.get(d, 0) + 1
-        assert d.weekday() < 4                                   # Mon-Thu only
-        m = ny_minute(a.ts)
-        assert hhmm("08:00") <= m <= hhmm("14:00")               # armed by a candle closing in the window (+45 s)
+        assert d.weekday() < 4                                   # Mon-Thu trading days only
+        assert a.session in ("Asia", "London", "NY")
+        assert sess_min_of(ny_minute(a.ts)) <= hhmm("14:00") - hhmm("18:00") + 1440 + 1   # by 14:00:45 at most
     assert max(by_day.values()) <= 3
+    assert {a.session for a in entries} >= {"Asia"}

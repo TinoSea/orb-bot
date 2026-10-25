@@ -2,7 +2,7 @@
 
 Each entry is written **before** testing. Results and the decision are added at the end, never edited away.
 
-## Status board (updated 2026-10-24) — start here
+## Status board (updated 2026-10-25) — start here
 
 Search this file for the code (e.g. "H-002") to read the full entry: idea, exact rules, results, decision.
 
@@ -28,7 +28,8 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | H-020 | AMD at the NY open: sweep/gap tap 09:25–09:33, then reverse (GS Trades video) | failed | 24% win at 2R, −0.34R after costs; 5th pct vs coin-flip direction |
 | **H-017** | **Her zones, first try 09:30-10:00, forward on demo** | **open from 2026-10-19** | 49.1% win in the past slice; is it real? |
 | **H-015** | **Gold long-only, forward test (demo; live allowed under rules)** | **open from 2026-10-19** | **the only live lead** |
-| **H-022** | **H-017 rules on MNQ futures, signals 08:00-14:00 NY** | **registered 2026-10-22, not started** | window never tested; forward on Sim / demo |
+| H-022 | H-017 rules on MNQ futures, signals 08:00-14:00 NY | superseded by H-025 before it started | never ran |
+| **H-025** | **H-017 rules on MNQ futures, Asia + London + NY sessions (18:00-14:00 NY)** | **registered 2026-10-25, not started** | Asia and London never tested; forward on Sim / demo, judged per session |
 | H-023 | ICT 2022 NY model: overnight-range sweep → 5-min MSS → FVG entry, target range end | failed | only 9 trades in 9 months; price kept going after the sweep on 42% of days |
 | H-024 | ICT macro windows (HH:50–HH:10) vs rest of the hour (descriptive) | not supported | 1 of 13 windows moves more: 09:50–10:10, the 10:00 news slot |
 
@@ -1206,6 +1207,35 @@ break-even is about **45.4%** wins at 1.3R.
 in between → continue to 300. Also report the win rate by hour (08-09:30, 09:30-11:30, 11:30-14:00) without
 changing the rule mid-test.
 **Records:** `LK_futures_journal.csv` (NinjaTrader user folder, or `futures/tradovate/journal/`), sent to Claude monthly.
+### Results
+### Decision
+**2026-10-25: superseded by H-025 before any trade** (Tino widened the windows to Asia, London and New York).
+
+---
+
+## H-025: LK rules on futures (MNQ), Asia + London + New York sessions, forward on Sim / demo
+
+**Registered:** 2026-10-25, before any trade or test on these windows.  **Status:** REGISTERED, not started.
+**Why.** Tino wants the bot to trade the Asia and London sessions as well as New York, until 14:00 New York. Nothing in
+H-011..H-017 tested any hour before 09:30 New York (see H-022 for what was tested), so Asia, London and the New York
+pre-market and midday are all new. Tested forward only.
+**Rules.** `futures/ninjatrader/LKForward.cs` (or `futures/tradovate/lk_tradovate.py`, same entries: parity checked on
+5 random seeds, 155 entries) **v1.10-futures** at defaults: H-017's zone, candle, trigger and bracket rules (stop 12.5 /
+target 16.25, 15-minute cap, first try only, one position); **signal windows Asia 18:00-03:00, London 03:00-08:00,
+New York 08:00-14:00 (New York time), flat 14:30**; days are CME trading days (18:00 New York opens the next date's
+session), so "earlier-day" zones are those formed before the 18:00 open, ≤ 3 trades and ≤ 2 losses per trading day
+across all three windows, and no Friday trading day (Thursday 18:00 to Friday close). MNQ last-trade prices, $100 risk
+(4 MNQ), max 10 contracts, Maximum Loss Limit guard.
+**Costs.** New York about 0.045R a trade (break-even **45.4%** wins at 1.3R). Asia and London are thinner: assume one
+extra tick of slippage on stops (≈ 0.065R, break-even about **46.3%**). Check against the journal's real fills.
+**Stop early** if after 50 trades the overall win rate is below 37%. A single session that reaches 50 trades with a win
+rate below 37% may be switched off (logged here as an amendment, the rest continues).
+**Verdict at 150 trades:** overall win rate ≥ 47% and net profit after costs > 0 → continue to 300 before money;
+< 43% → close; in between → continue to 300. Report each session (Asia / London / New York) separately with its own
+break-even, without changing the rule mid-test except as above. Also report how often Asia or London used up the daily
+limits before New York opened.
+**Records:** `LK_futures_journal_v110.csv` (NinjaTrader user folder, or `futures/tradovate/journal/`), with
+`trading_day` and `session` columns, sent to Claude monthly.
 ### Results
 ### Decision
 

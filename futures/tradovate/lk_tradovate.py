@@ -2,6 +2,7 @@
 
     python futures/tradovate/lk_tradovate.py              # uses futures/tradovate/lk.env
 
+Signal windows (v1.10): Asia 18:00-03:00, London 03:00-08:00, New York 08:00-14:00 (New York time), flat 14:30.
 Starts in DRY RUN (LK_DRY_RUN=1): it reads live prices, finds signals and paper-trades them itself
 (stop, target, 15-minute cap, flat time), writing every step to the journal. No orders are sent.
 Set LK_DRY_RUN=0 only after a few dry-run days look right, and only on the Tradovate DEMO first.
@@ -20,11 +21,12 @@ from datetime import datetime
 from typing import List
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lk_core import NY, Bar, Engine, Enter, Exit, Guard, Rules, hhmm, ny_date, ny_minute, size  # noqa: E402
+from lk_core import (NY, Bar, Engine, Enter, Exit, Guard, Rules, in_flat_period, size,  # noqa: E402
+                     trading_day)
 from tradovate_client import MarketData, Tradovate, TradovateError  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.00-futures"
+VERSION = "1.10-futures"
 log = logging.getLogger("lk")
 
 
@@ -66,21 +68,25 @@ class Cfg:
                            payout_taken=g("LK_PAYOUT_TAKEN", "0") == "1",
                            floor_override=float(g("LK_FLOOR_OVERRIDE", "0")), buffer=float(g("LK_BUFFER", "50")))
         self.guard.eod_high = self.guard.start_balance
-        self.rules = Rules(sig_from=g("LK_SIG_FROM", "08:00"), sig_to=g("LK_SIG_TO", "14:00"),
-                           flat=g("LK_FLAT", "14:30"))
+        windows = g("LK_WINDOWS")
+        if not windows and g("LK_SIG_FROM"):                  # old single-window settings still work
+            windows = f'{g("LK_SIG_FROM")}-{g("LK_SIG_TO", "14:00")}'
+        self.rules = Rules(windows=windows or Rules.windows, flat=g("LK_FLAT", "14:30"))
 
 
 # ---------------------------------------------------------------- journal and state
-JOURNAL_COLS = ["time_ny", "event", "side", "price", "sl", "tp", "zone_tf", "zone_lo", "zone_hi", "contracts",
-                "profit", "balance", "floor", "note"]
+JOURNAL_COLS = ["time_ny", "trading_day", "session", "event", "side", "price", "sl", "tp", "zone_tf", "zone_lo",
+                "zone_hi", "contracts", "profit", "balance", "floor", "note"]
 
 
 def journal(row: dict) -> None:
+    if "ts" in row:
+        row = dict(row, time_ny=now_ny(row["ts"]), trading_day=trading_day(row["ts"]).isoformat())
     os.makedirs(os.path.join(HERE, "journal"), exist_ok=True)
-    path = os.path.join(HERE, "journal", "LK_futures_journal.csv")
+    path = os.path.join(HERE, "journal", "LK_futures_journal_v110.csv")
     new = not os.path.exists(path)
     with open(path, "a", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=JOURNAL_COLS)
+        w = csv.DictWriter(f, fieldnames=JOURNAL_COLS, extrasaction="ignore")
         if new:
             w.writeheader()
         w.writerow({k: row.get(k, "") for k in JOURNAL_COLS})
@@ -172,6 +178,7 @@ def main() -> None:
     contract = tv.contract(cfg.symbol)
     log.info("LK_Forward %s | %s | account %s | %s | %s", VERSION, cfg.env, acct.get("name"), cfg.symbol,
              "DRY RUN (no orders)" if cfg.dry else "ORDERS ON")
+    log.info("signal windows (New York): %s | flat %s", cfg.rules.windows, cfg.rules.flat)
     state = load_state(cfg.guard)
 
     ticks: "queue.Queue[tuple]" = queue.Queue()
@@ -186,22 +193,37 @@ def main() -> None:
     last_check = 0.0
     last_price = None
     eod_done = state.get("eod_date", "")
+    pos: dict = {}                               # the open trade: side, entry, qty, session
 
     def balance() -> float:
         if cfg.dry:
             return float(state.get("paper_balance", cfg.guard.start_balance))
         return tv.balance(acct["id"])
 
-    def close_trade(ts: float, pnl: float, price, how: str) -> None:
+    def close_trade(ts: float, pnl: float, price, how: str, note: str = "") -> None:
         nonlocal in_pos
         in_pos = False
         eng.on_exit(pnl)
         if cfg.dry:
             state["paper_balance"] = round(balance() + pnl, 2)
             save_state(state)
-        journal(dict(time_ny=now_ny(ts), event="exit", price=price, profit=round(pnl, 2), balance=balance(),
-                     note=how))
+        journal(dict(ts=ts, session=pos.get("session", ""), event="exit", side=pos.get("side_txt", ""), price=price,
+                     profit=round(pnl, 2), balance=balance(), note=(how + " " + note).strip()))
         log.info("exit (%s) at %s: %+.2f", how, price, pnl)
+
+    def realised(price) -> tuple:
+        """Real account: P&L from the balance change. Tradovate can post the cash a moment after the position goes
+        flat, so wait up to 5 s for it to move; if it never does, estimate from the last price (sign matters: it
+        decides whether the trade counts towards the 2-loss limit)."""
+        for _ in range(10):
+            delta = balance() - bal_before
+            if abs(delta) >= 0.01:
+                return delta, ""
+            time.sleep(0.5)
+        if price is None or not pos:
+            return 0.0, "balance unchanged"
+        est = pos["side"] * (price - pos["entry"]) * cfg.point_value * pos["qty"] - cfg.commission_rt * pos["qty"]
+        return est, "estimated from last price (balance had not updated)"
 
     while True:
         try:
@@ -212,7 +234,7 @@ def main() -> None:
         actions = []
         if item:
             last_price = item[1]
-            if ny_date(ts).isoformat() in cfg.no_trade_dates:
+            if trading_day(ts).isoformat() in cfg.no_trade_dates:
                 actions = [a for a in eng.on_tick(ts, last_price, in_pos) if not isinstance(a, Enter)]
             else:
                 actions = eng.on_tick(ts, last_price, in_pos)
@@ -234,7 +256,8 @@ def main() -> None:
             last_check = time.time()
             try:
                 if tv.net_position(acct["id"], contract["id"]) == 0:
-                    close_trade(ts, balance() - bal_before, "", "stop/target")
+                    pnl, note = realised(last_price)
+                    close_trade(ts, pnl, "", "stop/target", note)
             except TradovateError as ex:
                 log.warning("position check: %s", ex)
 
@@ -251,7 +274,8 @@ def main() -> None:
                         time.sleep(0.5)
                         if tv.net_position(acct["id"], contract["id"]) == 0:
                             break
-                    close_trade(ts, balance() - bal_before, last_price, a.reason)
+                    pnl, note = realised(last_price)
+                    close_trade(ts, pnl, last_price, a.reason, note)
             elif isinstance(a, Enter) and not in_pos:
                 b = balance()
                 q = size(cfg.risk, cfg.rules.stop_pts, cfg.point_value, cfg.max_contracts, b, cfg.guard,
@@ -259,13 +283,14 @@ def main() -> None:
                 side = "long" if a.side > 0 else "short"
                 sl = rnd(a.price - a.side * cfg.rules.stop_pts, cfg.tick)
                 tp = rnd(a.price + a.side * cfg.rules.target_pts, cfg.tick)
-                row = dict(time_ny=now_ny(ts), side=side, price=a.price, sl=sl, tp=tp, zone_tf=a.zone.tf,
+                row = dict(ts=ts, session=a.session, side=side, price=a.price, sl=sl, tp=tp, zone_tf=a.zone.tf,
                            zone_lo=a.zone.lo, zone_hi=a.zone.hi, contracts=q, balance=b,
                            floor=cfg.guard.floor())
                 if q <= 0:
                     journal(dict(row, event="skipped", note="size 0: risk, contract cap or MLL guard"))
                     log.info("signal %s skipped: size 0 (balance %.2f, floor %.2f)", side, b, cfg.guard.floor())
                     continue
+                pos = dict(side=a.side, side_txt=side, entry=a.price, qty=q, session=a.session)
                 if cfg.dry:
                     paper.open(a.side, a.price, q, sl, tp)
                     in_pos = True
@@ -294,16 +319,17 @@ def main() -> None:
                     journal(dict(row, event="error", note=str(ex)[:200]))
                     log.error("order failed: %s", ex)
 
-        # end of day: record the balance for the trailing loss limit (once, after the flat time)
-        today = ny_date(ts).isoformat()
-        if not in_pos and ny_minute(ts) >= hhmm(cfg.rules.flat) + 1 and eod_done != today:
+        # end of day: record the balance for the trailing loss limit (once per trading day, between the flat time
+        # and the 18:00 session open, a minute after flat so the last exit has settled)
+        today = trading_day(ts).isoformat()
+        if not in_pos and in_flat_period(ts - 60, cfg.rules) and in_flat_period(ts, cfg.rules) and eod_done != today:
             try:
                 b = balance()
                 cfg.guard.record_eod(b)
                 eod_done = today
                 state.update(eod_high=cfg.guard.eod_high, eod_date=today)
                 save_state(state)
-                journal(dict(time_ny=now_ny(ts), event="eod", balance=b, floor=cfg.guard.floor()))
+                journal(dict(ts=ts, event="eod", balance=b, floor=cfg.guard.floor()))
                 log.info("end of day: balance %.2f, MLL floor now %.2f", b, cfg.guard.floor())
             except TradovateError as ex:
                 log.warning("end-of-day balance: %s", ex)
