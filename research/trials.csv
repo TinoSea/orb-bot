@@ -1,0 +1,26 @@
+code,idea,status,looked_at_data,expectancy_R_after_costs,note
+H-001,Opening-range breakout S&P 500,open (stalled),yes,-0.32,Jan-Mar 2024
+H-002,Gold 4H structure + 1H pullback,rejected out of sample,yes,,gold +0.27R unseen but shorts and US500 failed
+H-003,Morning move to last half hour S&P 500,failed,yes,,-0.21 points a trade (not in R)
+H-004,Her supply/demand scalp (our guess),parked,yes,,no edge after costs
+H-005,Her filmed trades vs random,closed,yes,,85th percentile
+H-006,Her daily/4H/1H zones + failed-extreme entry,failed,yes,0.0,~+0.10R before costs
+H-007,London X / New York X framework,stopped at gate,yes,,not reproducible as a rule
+H-008,Opening-range break-and-retest Nasdaq,failed,yes,,no better than random timing
+H-009,H-006 entries wider brackets,failed,yes,,did not hold in 2023-25
+H-010,NY opening-range break 2 trades a day,not pursued,yes,,second trade loses every year
+H-011,Her fair value gaps + rejection candle,stopped at gate,yes,,trades far too often
+H-012,H-011 + 2 selection rules,failed,yes,-0.07,
+H-013,H-011 earlier-day zones only,failed,yes,-0.04,
+H-014,H-013 with 50-tick bracket,failed,yes,-0.02,
+H-015,Gold long-only forward test,open (forward),yes,,forward test from 2026-10-19
+H-016,Her zones + her own bracket,failed,yes,-0.016,98.8th pct vs random before costs
+H-017,Her zones first try 09:30-10:00 forward on demo,open (forward),yes,,49.1% win in the past slice
+H-018,BOS model,failed,yes,-0.14,
+H-019,Build-up breakout at levels,failed,yes,,4 trades in 9 months
+H-020,AMD sweep at the NY open,failed,yes,-0.34,
+H-022,H-017 on MNQ 08:00-14:00,superseded before start,no,,never ran
+H-023,ICT 2022 NY model,failed,yes,-0.21,9 trades
+H-024,ICT macro windows (descriptive),not supported,yes,,descriptive
+H-025,H-017 on MNQ Asia+London+NY forward,registered,no,,not started
+H-026,Session extremes and gaps vs placebo levels (descriptive),registered,no,,waiting for data

@@ -1,0 +1,202 @@
+//@version=6
+// Session Levels & Zones — chart helper (draws only, never trades). Part of github.com/TinoSea/orb-bot.
+//  - Asia (23:00-07:00 UTC) and London (07:00-13:00 UTC) boxes, with high, low and 50% lines that
+//    grow while the session runs, then extend right until the same session starts again.
+//  - 5- and 15-minute fair value gaps (3 candles; candle 3 does not overlap candle 1), kept until a
+//    later candle of the SAME time frame closes beyond the far edge.
+//    Strong colour = formed on an earlier New York day; pale = formed today.
+//  - alert() when price enters an earlier-day gap in the alert window (default 09:30-11:30 New York).
+//    To receive them: Alerts -> Create alert -> Condition "Session Levels & Zones" -> "Any alert() function call".
+//  - Optional dotted line at the 09:30 New York open.
+indicator("Session Levels & Zones", shorttitle = "Levels & Zones", overlay = true,
+     max_boxes_count = 500, max_lines_count = 500, max_labels_count = 500)
+
+TZ = "America/New_York"
+
+// ---------------------------------------------------------------- inputs
+grpS     = "Sessions"
+sessTz   = input.string("UTC", "Session timezone", group = grpS,
+     tooltip = "UTC matches her chart. Try Europe/London if the boxes look an hour off.")
+asiaSess = input.session("2300-0700", "Asia session", group = grpS)
+lonSess  = input.session("0700-1300", "London session", group = grpS)
+showBox  = input.bool(true, "Shade the session boxes", group = grpS)
+showLbl  = input.bool(true, "Label the levels with prices", group = grpS)
+showOpen = input.bool(true, "Mark the 9:30 New York open", group = grpS)
+
+grpZ      = "Fair value gaps"
+showM5    = input.bool(true, "5-minute gaps", group = grpZ)
+showM15   = input.bool(true, "15-minute gaps", group = grpZ)
+minGap    = input.float(5.0, "Smallest gap (price units; NQ/MNQ 5, gold ~1)", minval = 0, group = grpZ)
+showToday = input.bool(true, "Show gaps formed today (pale)", group = grpZ)
+
+grpA       = "Alerts"
+alertWin   = input.session("0930-1130", "Alert window (New York time)", group = grpA)
+alertToday = input.bool(false, "Also alert on gaps formed earlier today", group = grpA,
+     tooltip = "Off = only gaps from earlier days. On = also today's gaps, e.g. ones left by the 8:30 ET news releases.")
+
+daysBack = input.int(7, "Days to keep (levels and gaps)", minval = 1, maxval = 30, group = "History")
+
+grpC     = "Colours"
+cAsia    = input.color(color.fuchsia, "Asia high / low", group = grpC)
+cAsiaMid = input.color(color.purple,  "Asia 50%", group = grpC)
+cLon     = input.color(color.gray,    "London high / low", group = grpC)
+cLonMid  = input.color(color.orange,  "London 50%", group = grpC)
+cSupOld  = input.color(color.new(#cd5c5c, 55), "Supply gap, earlier days", group = grpC)
+cSupNew  = input.color(color.new(#ffcdd2, 65), "Supply gap, today", group = grpC)
+cDemOld  = input.color(color.new(#3ca06e, 55), "Demand gap, earlier days", group = grpC)
+cDemNew  = input.color(color.new(#c8ebd2, 65), "Demand gap, today", group = grpC)
+cOpen    = input.color(color.new(color.blue, 40), "New York open line", group = grpC)
+
+keepFrom = timenow - daysBack * 86400000
+dayKey(int t) => year(t, TZ) * 10000 + month(t, TZ) * 100 + dayofmonth(t, TZ)
+todayKey = dayKey(time)
+
+// ---------------------------------------------------------------- session levels
+// Draws one session's box and its high, low and 50% lines. The lines start at the
+// session open and keep extending right until the same session starts again.
+drawSession(string sess, string name, color col, color midCol) =>
+    var float hi = na
+    var float lo = na
+    var int   x0 = na
+    var box   bx = na
+    var line  hL = na
+    var line  lL = na
+    var line  mL = na
+    var label hT = na
+    var label lT = na
+    var label mT = na
+    inS   = not na(time(timeframe.period, sess, sessTz))
+    start = inS and not inS[1]
+    if start and time >= keepFrom
+        hi := high
+        lo := low
+        x0 := bar_index
+        bx := showBox ? box.new(x0, hi, x0, lo, border_color = color.new(col, 40), bgcolor = color.new(col, 90),
+             text = name, text_size = size.tiny, text_color = col, text_halign = text.align_left, text_valign = text.align_top) : na
+        hL := line.new(x0, hi, x0, hi, color = col, width = 2)
+        lL := line.new(x0, lo, x0, lo, color = col, width = 2)
+        mL := line.new(x0, hi, x0, hi, color = midCol, width = 1, style = line.style_dashed)
+        if showLbl
+            hT := label.new(x0, hi, "", style = label.style_label_left, color = color.new(col, 100), textcolor = col, size = size.small)
+            lT := label.new(x0, lo, "", style = label.style_label_left, color = color.new(col, 100), textcolor = col, size = size.small)
+            mT := label.new(x0, hi, "", style = label.style_label_left, color = color.new(midCol, 100), textcolor = midCol, size = size.small)
+    else if inS and not na(x0)
+        hi := math.max(hi, high)
+        lo := math.min(lo, low)
+    if not na(x0)
+        mid = (hi + lo) / 2
+        if inS and not na(bx)
+            box.set_top(bx, hi)
+            box.set_bottom(bx, lo)
+            box.set_right(bx, bar_index)
+        line.set_xy1(hL, x0, hi)
+        line.set_xy2(hL, bar_index, hi)
+        line.set_xy1(lL, x0, lo)
+        line.set_xy2(lL, bar_index, lo)
+        line.set_xy1(mL, x0, mid)
+        line.set_xy2(mL, bar_index, mid)
+        if showLbl and not na(hT)
+            label.set_xy(hT, bar_index, hi)
+            label.set_xy(lT, bar_index, lo)
+            label.set_xy(mT, bar_index, mid)
+            label.set_text(hT, name + " high " + str.tostring(hi, format.mintick))
+            label.set_text(lT, name + " low " + str.tostring(lo, format.mintick))
+            label.set_text(mT, name + " 50% " + str.tostring(mid, format.mintick))
+
+drawSession(asiaSess, "Asia",   cAsia, cAsiaMid)
+drawSession(lonSess,  "London", cLon,  cLonMid)
+
+// New York open marker
+inRth = not na(time(timeframe.period, "0930-1600", TZ))
+if showOpen and inRth and not inRth[1] and time >= keepFrom
+    line.new(bar_index, close, bar_index, close + syminfo.mintick, extend = extend.both, color = cOpen, style = line.style_dotted)
+
+// ---------------------------------------------------------------- fair value gaps
+// Closed higher-time-frame candles (no repainting):
+// [1] = candle 3 (last closed), [2] = candle 2, [3] = candle 1
+htf() => [high[1], low[1], high[3], low[3], close[1], time[2], time_close[1]]
+[h3a, l3a, h1a, l1a, c5, t2a, tc5]   = request.security(syminfo.tickerid, "5",  htf(), lookahead = barmerge.lookahead_on)
+[h3b, l3b, h1b, l1b, c15, t2b, tc15] = request.security(syminfo.tickerid, "15", htf(), lookahead = barmerge.lookahead_on)
+new5  = ta.change(tc5) != 0
+new15 = ta.change(tc15) != 0
+
+var array<box>    gBox   = array.new<box>()
+var array<float>  gLo    = array.new<float>()
+var array<float>  gHi    = array.new<float>()
+var array<bool>   gSup   = array.new<bool>()
+var array<string> gTf    = array.new<string>()
+var array<int>    gT     = array.new<int>()      // formed (close time of candle 3)
+var array<int>    gDay   = array.new<int>()      // New York date it formed
+var array<int>    gAlert = array.new<int>()      // New York date of the last alert
+
+removeAt(int i) =>
+    box.delete(array.get(gBox, i))
+    array.remove(gBox, i)
+    array.remove(gLo, i)
+    array.remove(gHi, i)
+    array.remove(gSup, i)
+    array.remove(gTf, i)
+    array.remove(gT, i)
+    array.remove(gDay, i)
+    array.remove(gAlert, i)
+
+colourFor(bool sup, bool old) => sup ? (old ? cSupOld : cSupNew) : (old ? cDemOld : cDemNew)
+
+process(string tf, float h3, float l3, float h1, float l1, float c, int t2, int tc) =>
+    // 1) a closed candle of this time frame beyond the far edge removes the gap
+    if array.size(gBox) > 0
+        for i = array.size(gBox) - 1 to 0
+            if array.get(gTf, i) == tf
+                isSup = array.get(gSup, i)
+                if (isSup and c > array.get(gHi, i)) or (not isSup and c < array.get(gLo, i))
+                    removeAt(i)
+    // 2) a new gap from the last three closed candles
+    sup = h3 < l1
+    dem = l3 > h1
+    if (sup or dem) and not na(t2) and tc >= keepFrom
+        lo = sup ? h3 : h1
+        hi = sup ? l1 : l3
+        if hi - lo >= minGap
+            d   = dayKey(tc)
+            old = d < todayKey
+            col = (not old and not showToday) ? color.new(color.white, 100) : colourFor(sup, old)
+            b = box.new(left = t2, top = hi, right = time, bottom = lo, xloc = xloc.bar_time, extend = extend.right,
+                 border_color = col, bgcolor = col, text = tf, text_size = size.tiny, text_halign = text.align_left,
+                 text_color = color.new(color.gray, 30))
+            array.push(gBox, b)
+            array.push(gLo, lo)
+            array.push(gHi, hi)
+            array.push(gSup, sup)
+            array.push(gTf, tf)
+            array.push(gT, tc)
+            array.push(gDay, d)
+            array.push(gAlert, 0)
+
+if showM15 and new15
+    process("15m", h3b, l3b, h1b, l1b, c15, t2b, tc15)
+if showM5 and new5
+    process("5m", h3a, l3a, h1a, l1a, c5, t2a, tc5)
+
+// Age limit, and recolour yesterday's "today" gaps when a new New York day starts
+if ta.change(todayKey) != 0 and array.size(gBox) > 0
+    for i = array.size(gBox) - 1 to 0
+        if array.get(gT, i) < time - daysBack * 86400000
+            removeAt(i)
+        else if array.get(gDay, i) < todayKey
+            col = colourFor(array.get(gSup, i), true)
+            box.set_bgcolor(array.get(gBox, i), col)
+            box.set_border_color(array.get(gBox, i), col)
+
+// ---------------------------------------------------------------- alerts
+inWin = not na(time(timeframe.period, alertWin, TZ))
+if inWin and barstate.isrealtime and array.size(gBox) > 0
+    for i = 0 to array.size(gBox) - 1
+        d        = array.get(gDay, i)
+        eligible = d < todayKey or (alertToday and d == todayKey)
+        if eligible and array.get(gAlert, i) != todayKey and close >= array.get(gLo, i) and close <= array.get(gHi, i)
+            array.set(gAlert, i, todayKey)
+            msg = syminfo.ticker + ": price " + str.tostring(close, format.mintick) + " entered " +
+                 (array.get(gSup, i) ? "SUPPLY " : "DEMAND ") + array.get(gTf, i) + " gap " +
+                 str.tostring(array.get(gLo, i), format.mintick) + "-" + str.tostring(array.get(gHi, i), format.mintick) +
+                 ". Watch for a rejection candle."
+            alert(msg, alert.freq_once_per_bar)

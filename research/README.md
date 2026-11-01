@@ -9,6 +9,10 @@ This folder is the lab notebook. It's what turns "I built a trading bot" into
 | `experiments.csv` | Every Python backtest run, including the failures | Automatic (`orb_backtest.py`) |
 | `mt5_results.csv` | Every MT5 Strategy Tester run | Send Claude the screenshots, or fill it in yourself |
 | `reviews/` | One review per week of demo (later live) trading | You, using `reviews/TEMPLATE.md` |
+| `trials.csv` / `trials.py` | Every registered idea that looked at data, and the "luck bar" a result must clear given how many were tried (deflated Sharpe ratio) | Claude adds a row per hypothesis |
+| `h026.py` | H-026: do Asia/London extremes and gaps turn price more than placebo levels? Run `python3 research/h026.py dev <US100_M1.csv>` | Claude, once data is attached |
+| `prop_sim.py` | FundedNext futures rules (Rapid Pro 25K defaults): pass, bust and payout odds for any trade record or profile | Anyone: `python3 research/prop_sim.py --profile 0.40 3.4 --per-day 2` |
+| `journal/predictions_log.csv` + `journal_score.py` | Your manual setups, written **before** entry with a confidence %, then scored: does your judgement beat chance and the market's base rate? | You, every setup (taken or skipped) |
 
 ## The rules (how professional research desks work)
 
@@ -42,3 +46,10 @@ A trade is graded on **whether it followed the plan**, not on whether it made mo
 | **Lost** | Good trade (the cost of doing business) | Bad trade |
 
 Over hundreds of trades, good process produces the results. Single trades are mostly noise.
+
+## Testing levels before entry rules (added 2026-11-01)
+
+Before registering any new entry rule on her levels, check that the levels themselves matter: H-026 compares real
+Asia/London highs and lows (and her fair value gaps) with placebo levels at the same distance from the open on other days.
+Its checks run on synthetic data with a known answer: `python3 research/tests/test_h026.py` (no edge → NOT SUPPORTED;
+planted edge → SUPPORTED; 1 false pass in 20 random markets, as designed).
