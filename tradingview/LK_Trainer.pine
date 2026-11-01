@@ -1,0 +1,364 @@
+//@version=6
+// LK Trainer — chart helper for learning her setup. Draws and alerts only, never trades. github.com/TinoSea/orb-bot
+// Each step of the setup is marked on the chart and can send an alert:
+//  1. Levels: Asia (23:00-07:00 UTC) and London (07:00-13:00 UTC) high, low and 50%; dotted line at the 9:30 NY open.
+//  2. Zones: 5- and 15-minute fair value gaps >= 5 points. Strong colour = formed on an earlier day (the only ones used).
+//  3. GET READY: price reaches an earlier-day gap inside the signal window -> yellow "ready" tag + alert.
+//  4. REJECTION: a closed candle whose wick tip is inside the gap, closes the right colour (red at supply, green at
+//     demand) and has a wick at least as long as its body -> "R" tag, dashed trigger line 1 tick beyond it, alert.
+//  5. ENTER: a later candle breaks the trigger within N candles -> "SELL"/"BUY" tag, stop and target lines, alert.
+//     Not broken in time -> grey "x" (cancelled). Each entry is then scored: target, stop or time cap.
+//  6. "Why not" tags (optional): the first candle that touches a gap but fails a rule says which rule it failed.
+// Defaults are the rules tested in research H-011..H-016: signals 09:30-11:30 NY, none 09:57-10:03, no Fridays, first try
+// per gap, stop after 2 losses; stop 12.5 / target 16.25 points. Those tests found the timing beats random entries but
+// the edge is smaller than trading costs. Use this to train your eye on demo, not as a reason to trade real money.
+// Best on a 15-second chart (as tested); on a 1-minute chart set "Trigger valid for" to 1 or 2.
+// Alerts: Alerts -> Create alert -> Condition "LK Trainer" -> "Any alert() function call".
+indicator("LK Trainer", overlay = true, max_boxes_count = 500, max_lines_count = 500, max_labels_count = 500)
+
+TZ = "America/New_York"
+
+// ---------------------------------------------------------------- inputs
+grpG      = "Signals"
+sigSess   = input.session("0930-1130", "Signal window (New York time)", group = grpG)
+skipNews  = input.bool(true, "No signals 09:57-10:03 (10:00 news)", group = grpG)
+noFri     = input.bool(true, "Skip Fridays (her rule)", group = grpG)
+firstTry  = input.bool(true, "First try only (one rejection per gap)", group = grpG)
+wickBody  = input.float(1.0, "Wick at least this many times the body", minval = 0, step = 0.1, group = grpG)
+mustExit  = input.bool(false, "Stricter: rejection candle must close back outside the gap", group = grpG,
+     tooltip = "Off = the tested rule (wick tip inside the gap, right colour, wick >= body). On = it must also close back out of the gap.")
+validBars = input.int(3, "Trigger valid for this many candles", minval = 1, group = grpG,
+     tooltip = "3 on a 15-second chart = 45 seconds, as tested. On a 1-minute chart use 1 or 2.")
+offTicks  = input.int(1, "Trigger this many ticks beyond the candle", minval = 0, group = grpG)
+maxTrades = input.int(7, "Max entries a day", minval = 1, group = grpG)
+maxLoss   = input.int(2, "Stop for the day after this many losses", minval = 1, group = grpG)
+showMiss  = input.bool(true, "Show 'why not' tags on candles that touch a gap but don't qualify", group = grpG)
+
+grpB    = "Bracket (points from entry)"
+stopPts = input.float(12.5, "Stop", minval = 0.25, group = grpB)
+tgtPts  = input.float(16.25, "Target", minval = 0.25, group = grpB)
+capMin  = input.int(15, "Time cap in minutes (0 = none)", minval = 0, group = grpB)
+
+grpZ      = "Fair value gaps"
+showM5    = input.bool(true, "5-minute gaps", group = grpZ)
+showM15   = input.bool(true, "15-minute gaps", group = grpZ)
+minGap    = input.float(5.0, "Smallest gap (price units; NQ/MNQ 5, gold ~1)", minval = 0, group = grpZ)
+showToday = input.bool(true, "Show gaps formed today (pale, never traded)", group = grpZ)
+daysBack  = input.int(7, "Days to keep (levels and gaps)", minval = 1, maxval = 30, group = grpZ)
+
+grpS     = "Sessions"
+sessTz   = input.string("UTC", "Session timezone", group = grpS, tooltip = "UTC matches her chart. Try Europe/London if the boxes look an hour off.")
+asiaSess = input.session("2300-0700", "Asia session", group = grpS)
+lonSess  = input.session("0700-1300", "London session", group = grpS)
+showSess = input.bool(true, "Show Asia and London levels", group = grpS)
+showOpen = input.bool(true, "Mark the 9:30 New York open", group = grpS)
+
+grpC     = "Colours"
+cAsia    = input.color(color.fuchsia, "Asia high / low", group = grpC)
+cAsiaMid = input.color(color.purple,  "Asia 50%", group = grpC)
+cLon     = input.color(color.gray,    "London high / low", group = grpC)
+cLonMid  = input.color(color.orange,  "London 50%", group = grpC)
+cSupOld  = input.color(color.new(#cd5c5c, 55), "Supply gap, earlier days", group = grpC)
+cSupNew  = input.color(color.new(#ffcdd2, 65), "Supply gap, today", group = grpC)
+cDemOld  = input.color(color.new(#3ca06e, 55), "Demand gap, earlier days", group = grpC)
+cDemNew  = input.color(color.new(#c8ebd2, 65), "Demand gap, today", group = grpC)
+
+tick     = syminfo.mintick
+keepFrom = timenow - daysBack * 86400000
+dayKey(int t) => year(t, TZ) * 10000 + month(t, TZ) * 100 + dayofmonth(t, TZ)
+todayKey = dayKey(time)
+fmtP(float p) => str.tostring(p, format.mintick)
+
+// ---------------------------------------------------------------- session levels
+drawSession(string sess, string name, color col, color midCol) =>
+    var float hi = na
+    var float lo = na
+    var int   x0 = na
+    var line  hL = na
+    var line  lL = na
+    var line  mL = na
+    var label hT = na
+    var label lT = na
+    var label mT = na
+    inS   = not na(time(timeframe.period, sess, sessTz))
+    start = inS and not inS[1]
+    if start and time >= keepFrom and showSess
+        hi := high
+        lo := low
+        x0 := bar_index
+        hL := line.new(x0, hi, x0, hi, color = col, width = 2)
+        lL := line.new(x0, lo, x0, lo, color = col, width = 2)
+        mL := line.new(x0, hi, x0, hi, color = midCol, width = 1, style = line.style_dashed)
+        hT := label.new(x0, hi, "", style = label.style_label_left, color = color.new(col, 100), textcolor = col, size = size.small)
+        lT := label.new(x0, lo, "", style = label.style_label_left, color = color.new(col, 100), textcolor = col, size = size.small)
+        mT := label.new(x0, hi, "", style = label.style_label_left, color = color.new(midCol, 100), textcolor = midCol, size = size.small)
+    else if inS and not na(x0)
+        hi := math.max(hi, high)
+        lo := math.min(lo, low)
+    if not na(x0)
+        mid = (hi + lo) / 2
+        line.set_xy1(hL, x0, hi)
+        line.set_xy2(hL, bar_index, hi)
+        line.set_xy1(lL, x0, lo)
+        line.set_xy2(lL, bar_index, lo)
+        line.set_xy1(mL, x0, mid)
+        line.set_xy2(mL, bar_index, mid)
+        label.set_xy(hT, bar_index, hi)
+        label.set_xy(lT, bar_index, lo)
+        label.set_xy(mT, bar_index, mid)
+        label.set_text(hT, name + " high " + str.tostring(hi, format.mintick))
+        label.set_text(lT, name + " low " + str.tostring(lo, format.mintick))
+        label.set_text(mT, name + " 50% " + str.tostring(mid, format.mintick))
+
+drawSession(asiaSess, "Asia",   cAsia, cAsiaMid)
+drawSession(lonSess,  "London", cLon,  cLonMid)
+
+inRth = not na(time(timeframe.period, "0930-1600", TZ))
+if showOpen and inRth and not inRth[1] and time >= keepFrom
+    line.new(bar_index, close, bar_index, close + tick, extend = extend.both, color = color.new(color.blue, 40), style = line.style_dotted)
+
+// ---------------------------------------------------------------- fair value gaps (closed 5m / 15m candles, no repaint)
+htf() => [high[1], low[1], high[3], low[3], close[1], time[2], time_close[1]]
+[h3a, l3a, h1a, l1a, c5, t2a, tc5]   = request.security(syminfo.tickerid, "5",  htf(), lookahead = barmerge.lookahead_on)
+[h3b, l3b, h1b, l1b, c15, t2b, tc15] = request.security(syminfo.tickerid, "15", htf(), lookahead = barmerge.lookahead_on)
+new5  = ta.change(tc5) != 0
+new15 = ta.change(tc15) != 0
+
+var array<box>    gBox   = array.new<box>()
+var array<float>  gLo    = array.new<float>()
+var array<float>  gHi    = array.new<float>()
+var array<bool>   gSup   = array.new<bool>()
+var array<string> gTf    = array.new<string>()
+var array<int>    gT     = array.new<int>()      // formed (close time of candle 3)
+var array<int>    gDay   = array.new<int>()      // New York date it formed
+var array<bool>   gUsed  = array.new<bool>()     // a rejection has already formed at it
+var array<int>    gReady = array.new<int>()      // New York date of the last "get ready"
+
+removeAt(int i) =>
+    box.delete(array.get(gBox, i))
+    array.remove(gBox, i)
+    array.remove(gLo, i)
+    array.remove(gHi, i)
+    array.remove(gSup, i)
+    array.remove(gTf, i)
+    array.remove(gT, i)
+    array.remove(gDay, i)
+    array.remove(gUsed, i)
+    array.remove(gReady, i)
+
+colourFor(bool sup, bool old) => sup ? (old ? cSupOld : cSupNew) : (old ? cDemOld : cDemNew)
+
+process(string tf, float h3, float l3, float h1, float l1, float c, int t2, int tc) =>
+    if array.size(gBox) > 0
+        for i = array.size(gBox) - 1 to 0
+            if array.get(gTf, i) == tf
+                isSup = array.get(gSup, i)
+                if (isSup and c > array.get(gHi, i)) or (not isSup and c < array.get(gLo, i))
+                    removeAt(i)
+    sup = h3 < l1
+    dem = l3 > h1
+    if (sup or dem) and not na(t2) and tc >= keepFrom
+        lo = sup ? h3 : h1
+        hi = sup ? l1 : l3
+        if hi - lo >= minGap
+            d   = dayKey(tc)
+            old = d < todayKey
+            col = (not old and not showToday) ? color.new(color.white, 100) : colourFor(sup, old)
+            b = box.new(left = t2, top = hi, right = time, bottom = lo, xloc = xloc.bar_time, extend = extend.right,
+                 border_color = col, bgcolor = col, text = tf, text_size = size.tiny, text_halign = text.align_left,
+                 text_color = color.new(color.gray, 30))
+            array.push(gBox, b)
+            array.push(gLo, lo)
+            array.push(gHi, hi)
+            array.push(gSup, sup)
+            array.push(gTf, tf)
+            array.push(gT, tc)
+            array.push(gDay, d)
+            array.push(gUsed, false)
+            array.push(gReady, 0)
+
+if showM15 and new15
+    process("15m", h3b, l3b, h1b, l1b, c15, t2b, tc15)
+if showM5 and new5
+    process("5m", h3a, l3a, h1a, l1a, c5, t2a, tc5)
+
+if ta.change(todayKey) != 0 and array.size(gBox) > 0
+    for i = array.size(gBox) - 1 to 0
+        if array.get(gT, i) < time - daysBack * 86400000
+            removeAt(i)
+        else if array.get(gDay, i) < todayKey
+            col = colourFor(array.get(gSup, i), true)
+            box.set_bgcolor(array.get(gBox, i), col)
+            box.set_border_color(array.get(gBox, i), col)
+
+// ---------------------------------------------------------------- time filters and daily limits
+inSig  = not na(time(timeframe.period, sigSess, TZ))
+inNews = skipNews and not na(time(timeframe.period, "0957-1003", TZ))
+isFri  = dayofweek(time, TZ) == dayofweek.friday
+okTime = inSig and not inNews and not (noFri and isFri)
+
+var int  dayTrades = 0
+var int  dayLosses = 0
+var bool doneTag   = false
+if ta.change(todayKey) != 0
+    dayTrades := 0
+    dayLosses := 0
+    doneTag   := false
+canSignal = okTime and dayTrades < maxTrades and dayLosses < maxLoss
+
+// ---------------------------------------------------------------- state: 0 idle, 1 waiting for the break, 2 in a trade
+var int   st     = 0
+var int   dir    = 0
+var float trig   = na
+var int   sigBar = na
+var int   left   = 0
+var float ent    = na
+var float sl     = na
+var float tp     = na
+var int   entT   = na
+var int   entBar = na
+var line  slL    = na
+var line  tpL    = na
+var int   nSig   = 0
+var int   nIn    = 0
+var int   nCan   = 0
+var int   nWin   = 0
+var int   nLoss  = 0
+var int   nTime  = 0
+var float sumR   = 0.0
+
+// 5. ENTER: a later candle breaks the trigger (checked on every price update, so the alert is immediate)
+if st == 1 and bar_index > sigBar
+    broke = dir > 0 ? high >= trig : low <= trig
+    if broke
+        ent    := dir > 0 ? math.max(trig, open) : math.min(trig, open)
+        sl     := ent - dir * stopPts
+        tp     := ent + dir * tgtPts
+        entT   := time
+        entBar := bar_index
+        st     := 2
+        nIn    += 1
+        dayTrades += 1
+        label.new(bar_index, dir > 0 ? low : high, dir > 0 ? "BUY" : "SELL", yloc = dir > 0 ? yloc.belowbar : yloc.abovebar,
+             style = dir > 0 ? label.style_label_up : label.style_label_down,
+             color = dir > 0 ? color.new(color.green, 0) : color.new(color.red, 0), textcolor = color.white, size = size.small)
+        slL := line.new(bar_index, sl, bar_index + 1, sl, color = color.new(color.red, 20), width = 1)
+        tpL := line.new(bar_index, tp, bar_index + 1, tp, color = color.new(color.green, 20), width = 1)
+        alert(syminfo.ticker + " ENTER " + (dir > 0 ? "LONG" : "SHORT") + ": trigger " + fmtP(trig) + " broken. Entry ~" + fmtP(ent) +
+             ", stop " + fmtP(sl) + ", target " + fmtP(tp), alert.freq_once_per_bar)
+    else if barstate.isconfirmed
+        left -= 1
+        if left <= 0
+            st := 0
+            nCan += 1
+            label.new(bar_index, trig, "x", style = label.style_none, textcolor = color.gray, size = size.small)
+
+// Score an open trade (closed candles only; on the entry candle only the stop can count, since the order inside it is unknown)
+if st == 2 and barstate.isconfirmed
+    line.set_x2(slL, bar_index)
+    line.set_x2(tpL, bar_index)
+    onEntry = bar_index == entBar
+    hitS    = dir > 0 ? low <= sl : high >= sl
+    hitT    = not onEntry and (dir > 0 ? high >= tp : low <= tp)
+    timeUp  = not onEntry and capMin > 0 and time_close - entT >= capMin * 60000
+    float r = na
+    if hitS
+        r := -1.0
+    else if hitT
+        r := tgtPts / stopPts
+    else if timeUp
+        r := dir * (close - ent) / stopPts
+    if not na(r)
+        st := 0
+        sumR += r
+        if r <= -1.0
+            nLoss += 1
+            dayLosses += 1
+        else if hitT
+            nWin += 1
+        else
+            nTime += 1
+        txt = hitS ? "stop -1R" : hitT ? "target +" + str.tostring(r, "#.##") + "R" : "time " + str.tostring(r, "+#.##;-#.##") + "R"
+        label.new(bar_index, hitS ? sl : hitT ? tp : close, txt, style = label.style_label_left,
+             color = color.new(color.black, 100), textcolor = r > 0 ? color.green : color.red, size = size.small)
+
+// 3. GET READY and 4. REJECTION (closed candles for the rejection; any update for the early warning)
+if canSignal and st != 2 and array.size(gBox) > 0
+    body = math.abs(close - open)
+    uw   = high - math.max(open, close)
+    lw   = math.min(open, close) - low
+    int   found   = -1
+    int   fdir    = 0
+    string why    = ""
+    bool  whySup  = false
+    for i = 0 to array.size(gBox) - 1
+        if array.get(gDay, i) < todayKey
+            lo   = array.get(gLo, i)
+            hi   = array.get(gHi, i)
+            sup  = array.get(gSup, i)
+            touch = sup ? (high >= lo and low <= hi) : (low <= hi and high >= lo)
+            // early warning, once per gap per day
+            if touch and st == 0 and array.get(gReady, i) != todayKey
+                alert(syminfo.ticker + " GET READY: price is in an earlier-day " + (sup ? "SUPPLY" : "DEMAND") + " gap " + fmtP(lo) +
+                     "-" + fmtP(hi) + " (" + array.get(gTf, i) + "). Watch for a rejection candle.", alert.freq_once_per_bar)
+                if barstate.isconfirmed
+                    array.set(gReady, i, todayKey)
+                    label.new(bar_index, sup ? high : low, "ready", yloc = sup ? yloc.abovebar : yloc.belowbar,
+                         style = label.style_none, textcolor = color.orange, size = size.tiny)
+            // rejection candle at this gap?
+            if barstate.isconfirmed and found < 0 and touch and not (firstTry and array.get(gUsed, i))
+                tip     = sup ? high : low
+                tipIn   = tip >= lo and tip <= hi
+                colour  = sup ? close < open : close > open
+                wick    = sup ? uw : lw
+                wickOk  = wick > 0 and wick >= wickBody * body
+                exitOk  = not mustExit or (sup ? close < lo : close > hi)
+                if tipIn and colour and wickOk and exitOk
+                    found := i
+                    fdir  := sup ? -1 : 1
+                else if why == ""
+                    fresh = sup ? high[1] < lo : low[1] > hi
+                    if fresh
+                        whySup := sup
+                        why := not tipIn ? "wick went through the gap" : not colour ? (sup ? "not a red close" : "not a green close") :
+                             not wickOk ? "wick shorter than body" : "closed inside the gap"
+    if found >= 0
+        array.set(gUsed, found, true)
+        dir    := fdir
+        trig   := dir > 0 ? high + offTicks * tick : low - offTicks * tick
+        sigBar := bar_index
+        left   := validBars
+        st     := 1
+        nSig   += 1
+        label.new(bar_index, dir > 0 ? low : high, "R", yloc = dir > 0 ? yloc.belowbar : yloc.abovebar,
+             style = dir > 0 ? label.style_label_up : label.style_label_down,
+             color = color.new(color.orange, 0), textcolor = color.black, size = size.tiny)
+        line.new(bar_index, trig, bar_index + validBars, trig, color = color.orange, style = line.style_dashed, width = 1)
+        alert(syminfo.ticker + " REJECTION candle at " + (dir > 0 ? "DEMAND" : "SUPPLY") + " gap " + fmtP(array.get(gLo, found)) + "-" +
+             fmtP(array.get(gHi, found)) + ". " + (dir > 0 ? "BUY" : "SELL") + " if price breaks " + fmtP(trig) + " within " +
+             str.tostring(validBars) + " candles. Stop " + str.tostring(stopPts) + " pts, target " + str.tostring(tgtPts) + " pts.",
+             alert.freq_once_per_bar_close)
+    else if showMiss and why != "" and barstate.isconfirmed
+        label.new(bar_index, whySup ? high : low, why, yloc = whySup ? yloc.abovebar : yloc.belowbar,
+             style = label.style_none, textcolor = color.new(color.gray, 20), size = size.tiny)
+
+if okTime and dayLosses >= maxLoss and not doneTag and barstate.isconfirmed
+    doneTag := true
+    label.new(bar_index, high, str.tostring(maxLoss) + " losses: done for today", yloc = yloc.abovebar,
+         style = label.style_none, textcolor = color.gray, size = size.small)
+
+// ---------------------------------------------------------------- score
+var table tb = table.new(position.bottom_right, 2, 7, bgcolor = color.new(color.black, 20), border_width = 1)
+if barstate.islast
+    n  = nWin + nLoss + nTime
+    be = 100 * stopPts / (stopPts + tgtPts)
+    rows = array.from("Rejections", "Entered / cancelled", "Target / stop / time", "Win rate", "Average R (before costs)", "Break-even win rate", "Sample")
+    vals = array.from(str.tostring(nSig), str.tostring(nIn) + " / " + str.tostring(nCan),
+         str.tostring(nWin) + " / " + str.tostring(nLoss) + " / " + str.tostring(nTime),
+         n > 0 ? str.tostring(100.0 * nWin / n, "#.#") + "%" : "-",
+         n > 0 ? str.tostring(sumR / n, "+0.00;-0.00") : "-",
+         str.tostring(be, "#.#") + "% before costs, ~" + str.tostring(be + 2, "#") + "% after",
+         n < 30 ? "under 30 trades: too few to judge" : str.tostring(n) + " trades on this chart")
+    for k = 0 to 6
+        table.cell(tb, 0, k, array.get(rows, k), text_color = color.white, text_size = size.small, text_halign = text.align_left)
+        table.cell(tb, 1, k, array.get(vals, k), text_color = color.white, text_size = size.small, text_halign = text.align_left)
