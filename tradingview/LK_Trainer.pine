@@ -1,7 +1,8 @@
 //@version=6
 // LK Trainer — chart helper for learning her setup. Draws and alerts only, never trades. github.com/TinoSea/orb-bot
 // Each step of the setup is marked on the chart and can send an alert:
-//  1. Levels: Asia (23:00-07:00 UTC) and London (07:00-13:00 UTC) high, low and 50%; dotted line at the 9:30 NY open.
+//  1. Levels: Asia (23:00-07:00 UTC) and London (07:00-13:00 UTC) shaded boxes, high / low / 50% lines extending right
+//     with labels; dotted line at the 9:30 NY open.
 //  2. Zones: 5- and 15-minute fair value gaps >= 5 points. Strong colour = formed on an earlier day (the only ones used).
 //  3. GET READY: price reaches an earlier-day gap inside the signal window -> yellow "ready" tag + alert.
 //  4. REJECTION: a closed candle whose wick tip is inside the gap, closes the right colour (red at supply, green at
@@ -51,6 +52,8 @@ sessTz   = input.string("UTC", "Session timezone", group = grpS, tooltip = "UTC 
 asiaSess = input.session("2300-0700", "Asia session", group = grpS)
 lonSess  = input.session("0700-1300", "London session", group = grpS)
 showSess = input.bool(true, "Show Asia and London levels", group = grpS)
+showBox  = input.bool(true, "Shade the session boxes", group = grpS)
+lblGap   = input.int(5, "Labels this many candles right of the last candle", minval = 0, maxval = 100, group = grpS)
 showOpen = input.bool(true, "Mark the 9:30 New York open", group = grpS)
 
 grpC     = "Colours"
@@ -70,10 +73,14 @@ todayKey = dayKey(time)
 fmtP(float p) => str.tostring(p, format.mintick)
 
 // ---------------------------------------------------------------- session levels
+// Each session gets a shaded box over its own hours, and high / low / 50% lines that start at the session open and
+// extend to the right, labelled at the right-hand edge. When the same session starts again the next day, the old
+// lines stop there and lose their labels, so only the latest Asia and London levels run across the chart.
 drawSession(string sess, string name, color col, color midCol) =>
     var float hi = na
     var float lo = na
     var int   x0 = na
+    var box   bx = na
     var line  hL = na
     var line  lL = na
     var line  mL = na
@@ -83,12 +90,21 @@ drawSession(string sess, string name, color col, color midCol) =>
     inS   = not na(time(timeframe.period, sess, sessTz))
     start = inS and not inS[1]
     if start and time >= keepFrom and showSess
+        if not na(x0)
+            for l in array.from(hL, lL, mL)
+                line.set_extend(l, extend.none)
+                line.set_x2(l, bar_index - 1)
+            label.delete(hT)
+            label.delete(lT)
+            label.delete(mT)
         hi := high
         lo := low
         x0 := bar_index
-        hL := line.new(x0, hi, x0, hi, color = col, width = 2)
-        lL := line.new(x0, lo, x0, lo, color = col, width = 2)
-        mL := line.new(x0, hi, x0, hi, color = midCol, width = 1, style = line.style_dashed)
+        bx := showBox ? box.new(x0, hi, x0, lo, border_color = color.new(col, 60), bgcolor = color.new(col, 85), text = name,
+             text_size = size.small, text_color = col, text_halign = text.align_left, text_valign = text.align_top) : na
+        hL := line.new(x0, hi, x0 + 1, hi, color = col, width = 1, extend = extend.right)
+        lL := line.new(x0, lo, x0 + 1, lo, color = col, width = 1, extend = extend.right)
+        mL := line.new(x0, hi, x0 + 1, hi, color = midCol, width = 1, style = line.style_dashed, extend = extend.right)
         hT := label.new(x0, hi, "", style = label.style_label_left, color = color.new(col, 100), textcolor = col, size = size.small)
         lT := label.new(x0, lo, "", style = label.style_label_left, color = color.new(col, 100), textcolor = col, size = size.small)
         mT := label.new(x0, hi, "", style = label.style_label_left, color = color.new(midCol, 100), textcolor = midCol, size = size.small)
@@ -97,15 +113,21 @@ drawSession(string sess, string name, color col, color midCol) =>
         lo := math.min(lo, low)
     if not na(x0)
         mid = (hi + lo) / 2
-        line.set_xy1(hL, x0, hi)
-        line.set_xy2(hL, bar_index, hi)
-        line.set_xy1(lL, x0, lo)
-        line.set_xy2(lL, bar_index, lo)
-        line.set_xy1(mL, x0, mid)
-        line.set_xy2(mL, bar_index, mid)
-        label.set_xy(hT, bar_index, hi)
-        label.set_xy(lT, bar_index, lo)
-        label.set_xy(mT, bar_index, mid)
+        if inS and not na(bx)
+            box.set_top(bx, hi)
+            box.set_bottom(bx, lo)
+            box.set_right(bx, bar_index)
+        if inS
+            line.set_xy1(hL, x0, hi)
+            line.set_xy2(hL, x0 + 1, hi)
+            line.set_xy1(lL, x0, lo)
+            line.set_xy2(lL, x0 + 1, lo)
+            line.set_xy1(mL, x0, mid)
+            line.set_xy2(mL, x0 + 1, mid)
+        lx = bar_index + lblGap
+        label.set_xy(hT, lx, hi)
+        label.set_xy(lT, lx, lo)
+        label.set_xy(mT, lx, mid)
         label.set_text(hT, name + " high " + str.tostring(hi, format.mintick))
         label.set_text(lT, name + " low " + str.tostring(lo, format.mintick))
         label.set_text(mT, name + " 50% " + str.tostring(mid, format.mintick))
