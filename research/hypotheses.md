@@ -2,7 +2,7 @@
 
 Each entry is written **before** testing. Results and the decision are added at the end, never edited away.
 
-## Status board (updated 2026-10-25) — start here
+## Status board (updated 2026-11-01) — start here
 
 Search this file for the code (e.g. "H-002") to read the full entry: idea, exact rules, results, decision.
 
@@ -32,6 +32,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | **H-025** | **H-017 rules on MNQ futures, Asia + London + NY sessions (18:00-14:00 NY)** | **registered 2026-10-25, not started** | Asia and London never tested; forward on Sim / demo, judged per session |
 | H-023 | ICT 2022 NY model: overnight-range sweep → 5-min MSS → FVG entry, target range end | failed | only 9 trades in 9 months; price kept going after the sweep on 42% of days |
 | H-024 | ICT macro windows (HH:50–HH:10) vs rest of the hour (descriptive) | not supported | 1 of 13 windows moves more: 09:50–10:10, the 10:00 news slot |
+| **H-026** | **Do Asia/London extremes and her gaps mark NY reversals more than placebo levels? (descriptive)** | **registered 2026-11-01, waiting for data** | tests the levels themselves before any more entry rules |
 
 ---
 
@@ -1441,3 +1442,61 @@ so a "supported" result could be scheduled news rather than an algorithm. The 09
 Outside 09:50–10:10 the "macro" minutes move like any other 20 minutes of the hour. The one window that stands out holds the 10:00
 data releases, and the 07:50 block shows the reverse pattern where the news sits in the control instead. Both point to scheduled
 news, not a time-based algorithm. Practical reading: 09:50–10:10 is a high-volatility slot to plan around (as her 09:57 news stop does), not an edge.
+
+
+## H-026: Do Asia/London session extremes and fair value gaps mark reversals in New York more than placebo levels? (descriptive, no trading rule)
+Registered 2026-11-01, before any H-026 code was run on market data. Code: `research/h026.py`. US100 1-minute bars (FP Markets export,
+`h020.load_m1`), New York time; sessions computed in UTC exactly as `tradingview/Session_Levels_Zones.pine` draws them.
+
+**Why.** Every entry rule tested so far on her levels (H-004 … H-023) assumed the levels matter and then failed on the entry,
+the bracket or costs. This tests the assumption underneath them all, before any more entry rules: when New York price reaches
+one of these levels, does it turn back more often than it does at an ordinary price the same distance from the open?
+Prior evidence leans against: H-020 found fading a pre-open sweep did worse than a coin flip, and H-023 found price kept
+going after the overnight range was taken on 42% of days. Neither compared the levels with placebo levels.
+
+**Levels for New York day D** (weekdays)
+- **Session extremes (primary family):** Asia high / low = 1-minute bars 23:00 UTC (day before) → 06:59 UTC; London high / low =
+  07:00 → 12:59 UTC. A session counts only if ≥ 60% of its minutes have a bar.
+- **50% lines (reported only):** Asia and London midpoints.
+- **Fair value gaps (reported only):** 5- and 15-minute three-candle gaps ≥ 5 points (H-011's definition and the indicator's),
+  whose third candle closed in the 7 calendar days before New York midnight of D, and that no later candle of the same time
+  frame closed beyond the far edge before 09:30. A gap wholly above the open is a "high" level at its lower edge; wholly below,
+  a "low" level at its upper edge; a gap containing the open is skipped.
+- A level is **live** only if it is on the expected side of the 09:30 open: "high" levels above it, "low" levels below it.
+
+**Event and outcome**
+- **Touch:** the first 1-minute bar from 09:30 to 11:59 whose high reaches a live high level (low reaches a live low level).
+  One touch per level per day.
+- **Scale X** = ATR(14) of clock-aligned 5-minute bars, from the 14 completed 5-minute bars before the touch bar.
+- **Race from the level:** **reversal** if price reaches the level − X (high levels; + X for low levels) before it reaches the
+  level + X (− X for low levels); **continuation** if the other way round; **timeout** if neither within 60 minutes of the touch.
+  On the touch bar only continuation can count (the order inside the bar is unknown); a bar reaching both barriers counts as
+  continuation. Every rule here applies identically to the placebo levels, so these choices cannot favour the real ones.
+- Also recorded: the move at 5/15/30/60 minutes and the 60-minute best and worst excursion, in X units, signed so that + means reversal.
+
+**Placebo (the control group).** Each live real level becomes a pair (side, distance from the 09:30 open in units of the 09:30
+5-minute ATR). A placebo replicate places every pair on a **different, randomly drawn eligible day** at the same side and scaled
+distance, then measures touches and outcomes exactly as above. 1,000 replicates give the null distribution of the reversal rate.
+
+**Data.** Development 2025-07-01→2026-03-31 (same period as H-020/H-023/H-024), run once.
+Confirmation 2023-01-01→2025-06-30, run once, only if development is SUPPORTED (the same criteria). No rule is fitted, so a
+failed development run does not spend the confirmation period.
+
+**Verdict (primary: the four session extremes pooled).** SUPPORTED only if all three hold:
+1. ≥ 150 touches;
+2. the real reversal rate is above the 95th percentile of the placebo distribution;
+3. the real reversal rate is at least 5 percentage points above the placebo mean.
+Otherwise NOT SUPPORTED. Only this primary test decides the verdict.
+
+**Reported, not part of the verdict:** each of the four extremes alone; 50% lines; fair value gap edges (5m vs 15m); touch rate
+real vs placebo (are the levels reached less or more than chance?); the same primary test with sessions defined in New York time
+(Asia 20:00–03:00, London 03:00–09:00, as `LaKera_Zones.pine`) and in London time (Europe/London 23:00–07:00, 07:00–13:00);
+splits by touch time (09:30–10:00 vs 10:00–12:00), by overnight range size (Asia+London range against its trailing 20-day mean,
+terciles), by whether the open is inside the London range, by a news proxy (08:30 bar range in the top fifth of its trailing
+60 days; no calendar is used), and by day type (trend vs range, which uses the rest of the day: hindsight, labelled as such);
+95% day-bootstrap intervals throughout.
+**Not a trading rule.** A SUPPORTED result says where an entry rule might be worth registering next (as its own hypothesis,
+with costs); it is not permission to trade. Any change after seeing results is a new hypothesis.
+**Trials:** counted in `research/trials.csv` (the ledger of every registered hypothesis).
+### Results
+### Decision
