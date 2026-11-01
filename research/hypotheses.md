@@ -32,7 +32,7 @@ Search this file for the code (e.g. "H-002") to read the full entry: idea, exact
 | **H-025** | **H-017 rules on MNQ futures, Asia + London + NY sessions (18:00-14:00 NY)** | **registered 2026-10-25, not started** | Asia and London never tested; forward on Sim / demo, judged per session |
 | H-023 | ICT 2022 NY model: overnight-range sweep → 5-min MSS → FVG entry, target range end | failed | only 9 trades in 9 months; price kept going after the sweep on 42% of days |
 | H-024 | ICT macro windows (HH:50–HH:10) vs rest of the hour (descriptive) | not supported | 1 of 13 windows moves more: 09:50–10:10, the 10:00 news slot |
-| **H-026** | **Do Asia/London extremes and her gaps mark NY reversals more than placebo levels? (descriptive)** | **registered 2026-11-01, waiting for data** | tests the levels themselves before any more entry rules |
+| H-026 | Do Asia/London extremes and her gaps mark NY reversals more than placebo levels? (descriptive) | not supported | 42.7% reversal vs 45.6% at placebo levels (14th pct); price went through them more often than it turned |
 
 ---
 
@@ -1498,5 +1498,23 @@ terciles), by whether the open is inside the London range, by a news proxy (08:3
 **Not a trading rule.** A SUPPORTED result says where an entry rule might be worth registering next (as its own hypothesis,
 with costs); it is not permission to trade. Any change after seeing results is a new hypothesis.
 **Trials:** counted in `research/trials.csv` (the ledger of every registered hypothesis).
-### Results
-### Decision
+### Results (development, run once 2026-11-01)
+Data: FP Markets US100 M1 export (2025-06-30 → 2026-10-16, attached by Tino 2026-11-01). Code as committed at 7a01724, unchanged.
+Before the run, the code was checked on synthetic markets: a planted edge was found (+16 pp, 100th pct); 20 markets with no
+edge averaged −0.7 pp with 1 false pass in 20. After the run, 4 events were recomputed by hand from the raw file (levels and
+touch minutes matched).
+**194 days. Primary (Asia/London highs and lows, UTC): 627 live levels, 342 touches. Reversal 42.7% (95% 37.1–48.4%),
+continuation 56.1%, timeout 1.2%. Placebo mean 45.6%, 95th pct 50.0% → real at the 14th percentile, edge −2.9 pp.**
+Touched slightly more often than placebo levels (54.5% vs 51.9%). Average move 60 minutes after a touch: −0.93 X
+(price kept going through the level). Reported only, none decisive: asia_high 37.5%, asia_low 41.7%, london_high 40.6%,
+london_low 48.2% (66th pct); 50% lines 48.8% (92nd pct); 5m gaps 46.9% (68th), 15m gaps 47.5% (76th); sessions on New York
+time 45.9% (51st pct), on London time 41.3% (5th pct). Splits: large overnight range 34.8% vs placebo 45.4%, small 48.4%;
+09:30–10:00 42.4% vs 43.8%; trend days 39.8% vs 39.9% (hindsight). Full output: `results/h026/dev.md`, `dev.json`, `dev_events.csv`.
+### Decision (2026-11-01): NOT SUPPORTED at development; the 2023-2025 confirmation is not run (as registered).
+In New York 09:30–12:00, the Asia and London highs and lows did not turn price back any more often than ordinary prices at
+the same distance from the open; if anything, price went through them a little more often (not significant: 14th percentile).
+Read with H-020 (fading a pre-open sweep: worse than a coin flip) and H-023 (price continued past the overnight range on 42%
+of days), three tests now point the same way: these levels are where price often goes, not where it reliably turns.
+Gaps and 50% lines sit near chance (68th–92nd percentile across 10 reported comparisons, where one or two that high are
+expected by luck). Any rule built on a reversal at these levels needs its edge from somewhere else (timing, confirmation,
+order flow); a continuation (breakout) reading would be a new hypothesis, registered first.

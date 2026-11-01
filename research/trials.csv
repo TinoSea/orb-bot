@@ -23,4 +23,4 @@ H-022,H-017 on MNQ 08:00-14:00,superseded before start,no,,never ran
 H-023,ICT 2022 NY model,failed,yes,-0.21,9 trades
 H-024,ICT macro windows (descriptive),not supported,yes,,descriptive
 H-025,H-017 on MNQ Asia+London+NY forward,registered,no,,not started
-H-026,Session extremes and gaps vs placebo levels (descriptive),registered,no,,waiting for data
+H-026,Session extremes and gaps vs placebo levels (descriptive),not supported,yes,,42.7% reversal vs 45.6% placebo (14th pct)

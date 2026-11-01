@@ -1,0 +1,364 @@
+{
+ "period": [
+  "2025-07-01",
+  "2026-03-31"
+ ],
+ "days": 194,
+ "first_day": "2025-07-01",
+ "last_day": "2026-03-31",
+ "primary": {
+  "live_levels": 627,
+  "touches": 342,
+  "touch_rate": 0.5455,
+  "placebo_touch_rate": 0.5192,
+  "reversal_rate": 0.4269,
+  "reversal_ci95": [
+   0.3713,
+   0.4842
+  ],
+  "continuation_rate": 0.5614,
+  "timeout_rate": 0.0117,
+  "placebo_mean": 0.4562,
+  "placebo_p95": 0.5,
+  "percentile_vs_placebo": 14.4,
+  "edge_pp": -2.93,
+  "placebo_reps": 1000,
+  "mean_move5_X": -0.123,
+  "mean_move15_X": -0.162,
+  "mean_move30_X": -0.343,
+  "mean_move60_X": -0.932,
+  "mean_best60_X": 3.04,
+  "mean_worst60_X": 3.887,
+  "verdict": "NOT SUPPORTED"
+ },
+ "verdict": "NOT SUPPORTED",
+ "splits": {
+  "touch_slot": {
+   "09:30-10:00": {
+    "touches": 250,
+    "reversal_rate": 0.424,
+    "ci95": [
+     0.3578,
+     0.4896
+    ],
+    "placebo_rate": 0.4378
+   },
+   "10:00-12:00": {
+    "touches": 92,
+    "reversal_rate": 0.4348,
+    "ci95": [
+     0.3187,
+     0.5521
+    ],
+    "placebo_rate": 0.5003
+   }
+  },
+  "on_range_tercile": {
+   "large": {
+    "touches": 89,
+    "reversal_rate": 0.3483,
+    "ci95": [
+     0.2577,
+     0.4471
+    ],
+    "placebo_rate": 0.4537
+   },
+   "medium": {
+    "touches": 113,
+    "reversal_rate": 0.4336,
+    "ci95": [
+     0.3269,
+     0.5364
+    ],
+    "placebo_rate": 0.4677
+   },
+   "small": {
+    "touches": 128,
+    "reversal_rate": 0.4844,
+    "ci95": [
+     0.3889,
+     0.5834
+    ],
+    "placebo_rate": 0.4546
+   }
+  },
+  "open_in_london": {
+   "False": {
+    "touches": 41,
+    "reversal_rate": 0.5122,
+    "ci95": [
+     0.3333,
+     0.6667
+    ],
+    "placebo_rate": 0.4782
+   },
+   "True": {
+    "touches": 301,
+    "reversal_rate": 0.4153,
+    "ci95": [
+     0.3556,
+     0.4765
+    ],
+    "placebo_rate": 0.4486
+   }
+  },
+  "news_proxy": {
+   "False": {
+    "touches": 261,
+    "reversal_rate": 0.4138,
+    "ci95": [
+     0.3529,
+     0.4741
+    ],
+    "placebo_rate": 0.4368
+   },
+   "True": {
+    "touches": 81,
+    "reversal_rate": 0.4691,
+    "ci95": [
+     0.3378,
+     0.6
+    ],
+    "placebo_rate": 0.5178
+   }
+  },
+  "day_type (hindsight)": {
+   "range": {
+    "touches": 166,
+    "reversal_rate": 0.4578,
+    "ci95": [
+     0.3791,
+     0.538
+    ],
+    "placebo_rate": 0.5104
+   },
+   "trend": {
+    "touches": 176,
+    "reversal_rate": 0.3977,
+    "ci95": [
+     0.3176,
+     0.4785
+    ],
+    "placebo_rate": 0.3988
+   }
+  }
+ },
+ "reported_only": {
+  "asia_high": {
+   "live_levels": 137,
+   "touches": 64,
+   "touch_rate": 0.4672,
+   "placebo_touch_rate": 0.4878,
+   "reversal_rate": 0.375,
+   "reversal_ci95": [
+    0.25,
+    0.5
+   ],
+   "continuation_rate": 0.5938,
+   "timeout_rate": 0.0312,
+   "placebo_mean": 0.4439,
+   "placebo_p95": 0.5459,
+   "percentile_vs_placebo": 15.5,
+   "edge_pp": -6.89,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.12,
+   "mean_move15_X": -0.172,
+   "mean_move30_X": -0.307,
+   "mean_move60_X": -0.945,
+   "mean_best60_X": 3.123,
+   "mean_worst60_X": 3.408
+  },
+  "asia_low": {
+   "live_levels": 148,
+   "touches": 72,
+   "touch_rate": 0.4865,
+   "placebo_touch_rate": 0.4562,
+   "reversal_rate": 0.4167,
+   "reversal_ci95": [
+    0.3056,
+    0.5278
+   ],
+   "continuation_rate": 0.5833,
+   "timeout_rate": 0.0,
+   "placebo_mean": 0.4661,
+   "placebo_p95": 0.5625,
+   "percentile_vs_placebo": 22.0,
+   "edge_pp": -4.94,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.317,
+   "mean_move15_X": -0.181,
+   "mean_move30_X": -1.069,
+   "mean_move60_X": -1.865,
+   "mean_best60_X": 2.29,
+   "mean_worst60_X": 4.505
+  },
+  "london_high": {
+   "live_levels": 165,
+   "touches": 96,
+   "touch_rate": 0.5818,
+   "placebo_touch_rate": 0.5633,
+   "reversal_rate": 0.4062,
+   "reversal_ci95": [
+    0.3125,
+    0.5
+   ],
+   "continuation_rate": 0.5729,
+   "timeout_rate": 0.0208,
+   "placebo_mean": 0.4546,
+   "placebo_p95": 0.5385,
+   "percentile_vs_placebo": 14.0,
+   "edge_pp": -4.83,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.098,
+   "mean_move15_X": -0.08,
+   "mean_move30_X": 0.162,
+   "mean_move60_X": -0.462,
+   "mean_best60_X": 3.456,
+   "mean_worst60_X": 3.269
+  },
+  "london_low": {
+   "live_levels": 177,
+   "touches": 110,
+   "touch_rate": 0.6215,
+   "placebo_touch_rate": 0.556,
+   "reversal_rate": 0.4818,
+   "reversal_ci95": [
+    0.3907,
+    0.5727
+   ],
+   "continuation_rate": 0.5182,
+   "timeout_rate": 0.0,
+   "placebo_mean": 0.4614,
+   "placebo_p95": 0.543,
+   "percentile_vs_placebo": 66.5,
+   "edge_pp": 2.04,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.018,
+   "mean_move15_X": -0.214,
+   "mean_move30_X": -0.33,
+   "mean_move60_X": -0.722,
+   "mean_best60_X": 3.119,
+   "mean_worst60_X": 4.299
+  },
+  "mid_lines": {
+   "live_levels": 386,
+   "touches": 252,
+   "touch_rate": 0.6528,
+   "placebo_touch_rate": 0.6479,
+   "reversal_rate": 0.4881,
+   "reversal_ci95": [
+    0.4246,
+    0.5547
+   ],
+   "continuation_rate": 0.504,
+   "timeout_rate": 0.0079,
+   "placebo_mean": 0.4472,
+   "placebo_p95": 0.4921,
+   "percentile_vs_placebo": 92.0,
+   "edge_pp": 4.09,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.041,
+   "mean_move15_X": -0.333,
+   "mean_move30_X": -0.594,
+   "mean_move60_X": -0.526,
+   "mean_best60_X": 3.298,
+   "mean_worst60_X": 4.062
+  },
+  "gap_5min": {
+   "live_levels": 2396,
+   "touches": 431,
+   "touch_rate": 0.1799,
+   "placebo_touch_rate": 0.1775,
+   "reversal_rate": 0.4687,
+   "reversal_ci95": [
+    0.4237,
+    0.521
+   ],
+   "continuation_rate": 0.5058,
+   "timeout_rate": 0.0255,
+   "placebo_mean": 0.459,
+   "placebo_p95": 0.4989,
+   "percentile_vs_placebo": 68.0,
+   "edge_pp": 0.97,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.038,
+   "mean_move15_X": -0.246,
+   "mean_move30_X": -0.407,
+   "mean_move60_X": -0.738,
+   "mean_best60_X": 2.44,
+   "mean_worst60_X": 3.294
+  },
+  "gap_15min": {
+   "live_levels": 1720,
+   "touches": 341,
+   "touch_rate": 0.1983,
+   "placebo_touch_rate": 0.1955,
+   "reversal_rate": 0.4751,
+   "reversal_ci95": [
+    0.4175,
+    0.5365
+   ],
+   "continuation_rate": 0.5015,
+   "timeout_rate": 0.0235,
+   "placebo_mean": 0.4558,
+   "placebo_p95": 0.5016,
+   "percentile_vs_placebo": 75.5,
+   "edge_pp": 1.93,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.052,
+   "mean_move15_X": -0.202,
+   "mean_move30_X": -0.568,
+   "mean_move60_X": -0.859,
+   "mean_best60_X": 2.45,
+   "mean_worst60_X": 3.393
+  },
+  "extremes_sessions_ny": {
+   "live_levels": 637,
+   "touches": 357,
+   "touch_rate": 0.5604,
+   "placebo_touch_rate": 0.5353,
+   "reversal_rate": 0.4594,
+   "reversal_ci95": [
+    0.4058,
+    0.513
+   ],
+   "continuation_rate": 0.5294,
+   "timeout_rate": 0.0112,
+   "placebo_mean": 0.4577,
+   "placebo_p95": 0.5074,
+   "percentile_vs_placebo": 51.0,
+   "edge_pp": 0.17,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.11,
+   "mean_move15_X": -0.215,
+   "mean_move30_X": -0.423,
+   "mean_move60_X": -0.936,
+   "mean_best60_X": 3.0,
+   "mean_worst60_X": 3.845
+  },
+  "extremes_sessions_london_local": {
+   "live_levels": 608,
+   "touches": 327,
+   "touch_rate": 0.5378,
+   "placebo_touch_rate": 0.5058,
+   "reversal_rate": 0.4128,
+   "reversal_ci95": [
+    0.3509,
+    0.4763
+   ],
+   "continuation_rate": 0.578,
+   "timeout_rate": 0.0092,
+   "placebo_mean": 0.4567,
+   "placebo_p95": 0.5037,
+   "percentile_vs_placebo": 5.0,
+   "edge_pp": -4.39,
+   "placebo_reps": 200,
+   "mean_move5_X": -0.2,
+   "mean_move15_X": -0.213,
+   "mean_move30_X": -0.475,
+   "mean_move60_X": -1.019,
+   "mean_best60_X": 2.999,
+   "mean_worst60_X": 3.996
+  }
+ }
+}
